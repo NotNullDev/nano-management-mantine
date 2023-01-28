@@ -1,6 +1,10 @@
-import { Project, Task } from "@/types/types";
+import { Project, Task, TaskOptional } from "@/types/types";
 import dayjs from "dayjs";
 import { create } from "zustand";
+
+function validationSample() {
+  const task: TaskOptional = {};
+}
 
 export class TaskUtils {
   static getCurrentMonthDateRange(): [Date, Date] {

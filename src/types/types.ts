@@ -56,58 +56,38 @@ export const TaskSchema = z.object({
   user: UserSchema,
 });
 
-export type Tag = {
-  id: string;
-  name: string;
-};
+// infered types
 
-export type Team = {
-  id: string;
-  name: string;
-  tags: Tag[];
-};
+export type Tag = z.infer<typeof TagSchema>;
 
-export type Project = {
-  id: string;
-  name: string;
-  tags: Tag[];
-};
+export type Team = z.infer<typeof TeamSchema>;
 
-export type Organization = {
-  id: string;
-  name: string;
-  tags: Tag[];
-};
+export type Project = z.infer<typeof ProjectSchema>;
 
-export type Activity = {
-  id: string | null;
-  name: string;
-  duration: number;
-  team?: Team;
-  project?: Project;
-  organization?: Organization;
-};
+export type Organization = z.infer<typeof OrganizationSchema>;
 
-export type UserRole = {
-  id: string | null;
-  name: string;
-};
+export type Activity = z.infer<typeof ActivitySchema>;
 
-export type User = {
-  id: string | null;
-  username: string;
-  email: string;
-  name: string;
-  avatar: string;
-  roles: UserRole[];
-  teams: Team[];
-};
+export type UserRole = z.infer<typeof UserRoleSchema>;
 
-export type Task = {
-  id: string | null;
-  activity: Activity;
-  comment: string;
-  duration: number;
-  date: string;
-  user: User;
-};
+export type User = z.infer<typeof UserSchema>;
+
+export type Task = z.infer<typeof TaskSchema>;
+
+// optional types
+
+export type TagOptional = Partial<Tag>;
+
+export type TeamOptional = Partial<Team>;
+
+export type ProjectOptional = Partial<Project>;
+
+export type OrganizationOptional = Partial<Organization>;
+
+export type ActivityOptional = Partial<Activity>;
+
+export type UserRoleOptional = Partial<UserRole>;
+
+export type UserOptional = Partial<User>;
+
+export type TaskOptional = Partial<Task>;
