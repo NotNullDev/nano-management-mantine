@@ -32,7 +32,7 @@ export const ActivitySchema = z.object({
   organization: OrganizationSchema.optional(),
 });
 
-export const UserRoleSchema = z.object({ba
+export const UserRoleSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
 });
