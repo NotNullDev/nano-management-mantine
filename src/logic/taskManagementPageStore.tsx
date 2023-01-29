@@ -1,4 +1,3 @@
-import { showDebug } from "@/lib/debug";
 import { pocketbase } from "@/lib/pocketbase";
 import {
   Activity,
@@ -23,6 +22,14 @@ import { immer } from "zustand/middleware/immer";
 // utils
 
 export class TaskUtils {
+  static formatDate(date: Date): string {
+    const formattedDate = dayjs(date)
+      .format("YYYY-MM-DD HH:mm:ss.SSS")
+      .toString();
+
+    return formattedDate;
+  }
+
   static getCurrentMonthDateRange(): [Date, Date] {
     return [dayjs().startOf("month").toDate(), dayjs().endOf("month").toDate()];
   }
@@ -74,6 +81,7 @@ export type TaskManagementPageStoreType = {
   // side effects
   availableTeams: Team[]; // based on selected project
   availableActivities: Activity[]; // based on selected team
+  availableTasks: Task[]; // based on selected team
 };
 
 export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
@@ -99,6 +107,7 @@ export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
         // side effects
         availableTeams: [] as Team[], // based on selected project
         availableActivities: [] as Activity[], // based on selected team
+        availableTasks: [] as Task[], // based on selected team
       };
     })
   )
@@ -205,6 +214,16 @@ export async function fetchTasks() {
   return validData;
 }
 
+export async function fetchTasksWhereTeam(teamId: string) {
+  const tasks = await pocketbase.collection("tasks").getFullList(undefined, {
+    filter: `team.id = '${teamId}'`,
+  });
+
+  const validData = tasks.map((d) => TaskSchema.parse(d));
+
+  return validData;
+}
+
 export async function fetchTeams() {
   const teams = await pocketbase.collection("teams").getFullList();
 
@@ -253,13 +272,22 @@ export class TASKS_QUERY_KEYS {
 }
 
 export function useTasks() {
-  const query = useQuery([TASKS_QUERY_KEYS.TASKS], fetchTasks, {
-    onSuccess: (data) => {
-      taskManagementPageStore.setState((state) => {
-        state.tasks = data;
-      });
+  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+
+  const query = useQuery(
+    [TASKS_QUERY_KEYS.TASKS, selectedTeam?.id],
+    async () => {
+      return fetchTasksWhereTeam(selectedTeam?.id ?? "---");
     },
-  });
+    {
+      onSuccess: (data) => {
+        taskManagementPageStore.setState((state) => {
+          state.tasks = data;
+        });
+      },
+      enabled: !!selectedTeam?.id,
+    }
+  );
 
   return query;
 }
@@ -444,7 +472,18 @@ function updateAvailableTeams() {
       state.selectedTeam = availableTeams[0];
     });
   }
-  showDebug({
-    message: `updateAvailableTeams: ${availableTeams.length} teams found`,
-  });
+}
+
+export function getAvailableActivitiesForTask(task: TaskOptional) {
+  let selectedTeam = task.team;
+
+  if (!task.id) {
+    selectedTeam = taskManagementPageStore.getState().selectedTeam?.id;
+  }
+
+  const availableActivities = taskManagementPageStore
+    .getState()
+    .activities.filter((activity) => activity.team === selectedTeam);
+
+  return availableActivities;
 }

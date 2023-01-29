@@ -1,6 +1,7 @@
-import { showDebug } from "@/lib/debug";
 import { pocketbase } from "@/lib/pocketbase";
 import {
+  getActivityFromId,
+  getAvailableActivitiesForTask,
   getAvailableActivityFromName,
   getProjectFromName,
   getTeamFromName,
@@ -9,8 +10,7 @@ import {
   useTaskManagementData,
 } from "@/logic/taskManagementPageStore";
 import { taskManager } from "@/logic/taskManager";
-import { userStore } from "@/logic/userStore";
-import { Task, TaskOptional, TaskSchema } from "@/types/types";
+import { Task as NewTask, TaskOptional, TaskSchema } from "@/types/types";
 import {
   Box,
   Button,
@@ -23,18 +23,17 @@ import {
 import { DatePicker, DateRangePicker } from "@mantine/dates";
 import { showNotification } from "@mantine/notifications";
 import {
-  IconArrowRight,
   IconCalendar,
+  IconCheck,
   IconPlus,
   IconReload,
 } from "@tabler/icons-react";
-import dayjs from "dayjs";
 import React, { useCallback, useEffect, useState } from "react";
 import { ZodError } from "zod";
 
 type TasksPageStoreType = {
   currentTask: TaskOptional;
-  tasks: Task[];
+  tasks: NewTask[];
 };
 
 const TasksPage = () => {
@@ -140,11 +139,23 @@ const TeamSelector = () => {
 };
 
 const TasksArea = () => {
+  const tasks = taskManagementPageStore((state) => state.tasks);
+
   return (
     <div>
-      <Task />
+      <EditableTask />
+      {tasks.map((task) => {
+        return <NewTask key={task.id} task={task} />;
+      })}
     </div>
   );
+};
+
+const EditableTask = () => {
+  const [task, setTask] = React.useState<TaskOptional>({});
+  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+
+  return <NewTask task={task} key={selectedTeam?.id} />;
 };
 
 const TasksRangeDatePicker = () => {
@@ -189,71 +200,89 @@ const TasksRangeDatePicker = () => {
   );
 };
 
-const Task = () => {
-  const [task, setTask] = React.useState<TaskOptional>({});
-  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
-  const availableActivities = taskManagementPageStore(
-    (state) => state.availableActivities
+const NewTask = ({ task }: { task: TaskOptional }) => {
+  const [workTask, setWorkTask] = useState<TaskOptional>(task);
+  const [availableActivities, setAvailableActivities] = useState(
+    getAvailableActivitiesForTask(task)
   );
+  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+
+  const updateTask = (newTask: TaskOptional) => {
+    setWorkTask(newTask);
+  };
+
+  useEffect(() => {
+    setWorkTask(task);
+  }, [task]);
+
+  useEffect(() => {
+    const a = getAvailableActivitiesForTask(workTask);
+    setAvailableActivities(a);
+  }, [selectedTeam]);
 
   return (
-    <Box className="flex  flex-1 p-4 shadow-xl justify-between items-center relative">
+    <Box
+      className="flex flex-1 p-4 shadow-xl justify-between items-center relative"
+      key={selectedTeam?.id}
+    >
       {(!selectedTeam || availableActivities.length === 0) && (
         <Tooltip
           label="Select team must have at least one activity"
           withArrow
           offset={8}
         >
-          <Overlay className=" bg-black/70 z-10 cursor-not-allowed" />
+          <Overlay className=" bg-black/70 z-10 cursor-not-allowed " />
         </Tooltip>
       )}
       <div className="flex gap-4 ">
-        <ActivitySelector />
+        <ActivitySelector task={workTask} updateTask={updateTask} />
 
-        <TaskDurationSelector />
+        <TaskDurationSelector task={workTask} updateTask={updateTask} />
 
-        <TaskDatePicker />
+        <TaskDatePicker task={workTask} updateTask={updateTask} />
 
-        <TaskCommentTextInput />
+        <TaskCommentTextInput task={workTask} updateTask={updateTask} />
       </div>
 
-      <NewTaskControlButton />
+      <NewTaskControlButton task={workTask} updateTask={updateTask} />
     </Box>
   );
 };
 
-const NewTaskControlButton = () => {
+const NewTaskControlButton = ({
+  task,
+  updateTask,
+}: {
+  task: TaskOptional;
+  updateTask: (newTask: TaskOptional) => void;
+}) => {
   return (
     <>
       <div>
-        <Button size="xs" onClick={onResetTask}>
-          <IconReload />
-        </Button>
-        <Button size="xs" onCanPlay={onCopyLastTask}>
-          <IconPlus />
-        </Button>
-        <Button size="xs" onClick={onAddTask}>
-          <IconArrowRight />
-        </Button>
+        {/* update task */}
+        {!task.id && (
+          <Button size="xs" onClick={() => onAddTask(task)}>
+            <IconPlus />
+          </Button>
+        )}
+        {/* add task */}
+        {task.id && (
+          <Button size="xs" onClick={() => onUpdateTask(task)}>
+            <IconCheck />
+          </Button>
+        )}
       </div>
     </>
   );
 };
 
-async function onAddTask() {
-  const task = {
-    activity: taskManagementPageStore.getState().selectedActivity?.id,
-    comment: taskManagementPageStore.getState().selectedComment,
-    date: dayjs(taskManagementPageStore.getState().selectedDate)
-      .format("YYYY-MM-DD HH:mm:ss.SSS")
-      .toString(),
-    duration: taskManagementPageStore.getState().selectedDuration,
-    team: taskManagementPageStore.getState().selectedTeam?.id,
-    user: userStore.getState().user?.id,
-  } as TaskOptional;
+async function onUpdateTask(task: TaskOptional) {
+  if (!task.id) return;
+
+  let validatedTask: NewTask | undefined = undefined;
 
   try {
-    TaskSchema.parse(task);
+    validatedTask = TaskSchema.parse(task);
   } catch (e) {
     const err = e as ZodError;
     showNotification({
@@ -264,60 +293,140 @@ async function onAddTask() {
     return;
   }
 
-  await pocketbase.collection("tasks").create({
-    ...task,
+  if (!validatedTask) return;
+
+  await pocketbase.collection("tasks").update(task.id, {
+    ...validatedTask,
   });
+
   showNotification({
-    message: "Task added",
+    title: "Task updated",
+    message: "Task has been updated",
+    color: "blue",
   });
 }
 
+async function onAddTask(task: TaskOptional) {
+  let validatedTask: NewTask | undefined = undefined;
+
+  try {
+    validatedTask = TaskSchema.parse(task);
+  } catch (e) {
+    const err = e as ZodError;
+    showNotification({
+      title: "Error creating task",
+      message: err.message,
+      color: "red",
+    });
+    return;
+  }
+
+  if (!validatedTask) return;
+
+  await pocketbase.collection("tasks").create({
+    ...validatedTask,
+  });
+
+  showNotification({
+    title: "Task created",
+    message: "Task has been created",
+    color: "blue",
+  });
+}
+
+// async function onAddTask() {
+//   const task = {
+//     activity: taskManagementPageStore.getState().selectedActivity?.id,
+//     comment: taskManagementPageStore.getState().selectedComment,
+//     date: TaskUtils.formatDate(taskManagementPageStore.getState().selectedDate),
+//     duration: taskManagementPageStore.getState().selectedDuration,
+//     team: taskManagementPageStore.getState().selectedTeam?.id,
+//     user: userStore.getState().user?.id,
+//   } as TaskOptional;
+
+//   let validatedTask: NewTask | undefined = undefined;
+
+//   try {
+//     validatedTask = TaskSchema.parse(task);
+//   } catch (e) {
+//     const err = e as ZodError;
+//     showNotification({
+//       title: "Error creating task",
+//       message: err.message,
+//       color: "red",
+//     });
+//     return;
+//   }
+
+//   if (!validatedTask) return;
+
+//   await pocketbase.collection("tasks").create({
+//     ...validatedTask,
+//   });
+
+//   showNotification({
+//     title: "Task created",
+//     message: "Task has been created",
+//     color: "green",
+//   });
+// }
+
 function onCopyLastTask() {
   const task = taskManagementPageStore.getState();
-
-  showDebug({
-    message: "Task added",
-  });
 }
 
 function onResetTask() {
   const task = taskManagementPageStore.getState();
-
-  showDebug({
-    message: "Task added",
-  });
 }
 
-const ActivitySelector = () => {
-  const availableActivities = taskManagementPageStore(
-    (state) => state.availableActivities
+const ActivitySelector = ({
+  task,
+  updateTask,
+}: {
+  task: TaskOptional;
+  updateTask: (newTask: TaskOptional) => void;
+}) => {
+  const availableActivities = getAvailableActivitiesForTask(task);
+  const [activity, setActivity] = useState(
+    getActivityFromId(task.activity ?? "")
   );
-  const selectedActivity = taskManagementPageStore(
-    (state) => state.selectedActivity
-  );
-  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+
+  useEffect(() => {
+    if (!task.activity) return;
+
+    const activity = getActivityFromId(task.activity);
+
+    if (!activity) return;
+
+    setActivity(activity);
+  }, [task.activity]);
 
   return (
     <>
       <Select
         label="Activity"
         size="xs"
-        key={selectedTeam?.id}
+        key={task.activity}
         placeholder="Pick one"
         searchable
         nothingFound="Not found"
         withAsterisk
-        value={selectedActivity?.name}
-        onChange={(val) => {
-          if (!val) return;
+        value={activity?.name}
+        onChange={(e) => {
+          if (!e) return;
 
-          const activity = getAvailableActivityFromName(val);
+          const activity = getAvailableActivityFromName(e);
 
-          if (!activity) return;
+          if (!activity) {
+            return;
+          }
 
-          taskManagementPageStore.setState((state) => {
-            state.selectedActivity = activity;
-          });
+          const updatedTask = {
+            ...task,
+            activity: activity.id,
+          };
+
+          updateTask(updatedTask);
         }}
         data={availableActivities?.map((activity) => activity.name)}
       />
@@ -325,10 +434,34 @@ const ActivitySelector = () => {
   );
 };
 
-const TaskDurationSelector = () => {
+const updateActivity = (task: TaskOptional, activityId: string) => {
+  if (!activityId) return;
+
+  const activity = getAvailableActivityFromName(activityId);
+
+  if (!activity) return;
+
+  taskManagementPageStore.setState((state) => {
+    const foundTask = state.tasks.find((t) => t.id === task.id);
+
+    if (!foundTask || !activity.id) return;
+
+    foundTask.activity = activity.id;
+  });
+};
+
+const TaskDurationSelector = ({
+  task,
+  updateTask,
+}: {
+  task: TaskOptional;
+  updateTask: (newTask: TaskOptional) => void;
+}) => {
   const [value, setValue] = React.useState<number>(8.0);
-  const formattedValue = useState("");
-  const duration = taskManagementPageStore((state) => state.selectedDuration);
+
+  useEffect(() => {
+    setValue(task.duration ?? 8.0);
+  }, [task]);
 
   return (
     <NumberInput
@@ -347,19 +480,43 @@ const TaskDurationSelector = () => {
       step={0.5}
       max={24}
       onBlur={(e) => {}}
-      value={duration}
-      onChange={(val) => {
-        if (!val) return;
-        taskManagementPageStore.setState((state) => {
-          state.selectedDuration = val;
-        });
+      value={value}
+      onChange={(e) => {
+        if (!e) return;
+
+        if (isNaN(e)) {
+          showNotification({
+            title: "Error",
+            message: "Duration must be a number",
+            color: "red",
+          });
+        }
+
+        const updatedTask = {
+          ...task,
+          duration: e,
+        };
+
+        updateTask(updatedTask);
       }}
     />
   );
 };
 
-const TaskDatePicker = () => {
+const TaskDatePicker = ({
+  task,
+  updateTask,
+}: {
+  task: TaskOptional;
+  updateTask: (newTask: TaskOptional) => void;
+}) => {
   const [value, setValue] = React.useState<Date>(new Date());
+
+  useEffect(() => {
+    if (task.date) {
+      setValue(new Date(task.date));
+    }
+  }, [task.date]);
 
   return (
     <DatePicker
@@ -369,18 +526,34 @@ const TaskDatePicker = () => {
       label="Task date"
       withAsterisk
       value={value}
-      onChange={(val) => {
-        if (!val) return;
-        setValue(val);
+      onChange={(e) => {
+        if (!e) return;
+
+        const formatted = TaskUtils.formatDate(e);
+
+        const updatedTask = {
+          ...task,
+          date: formatted,
+        } as TaskOptional;
+
+        updateTask(updatedTask);
       }}
     />
   );
 };
 
-const TaskCommentTextInput = () => {
-  const selectedComment = taskManagementPageStore(
-    (state) => state.selectedComment
-  );
+const TaskCommentTextInput = ({
+  task,
+  updateTask,
+}: {
+  task: TaskOptional;
+  updateTask: (newTask: TaskOptional) => void;
+}) => {
+  const [selectedComment, setSelectedComment] = useState("");
+
+  useEffect(() => {
+    setSelectedComment(task.comment ?? "");
+  }, [task]);
 
   return (
     <TextInput
@@ -389,9 +562,14 @@ const TaskCommentTextInput = () => {
       size="xs"
       value={selectedComment}
       onChange={(e) => {
-        taskManagementPageStore.setState((state) => {
-          state.selectedComment = e.currentTarget.value;
-        });
+        const comment = e.target.value;
+
+        const updatedTask = {
+          ...task,
+          comment: comment,
+        } as TaskOptional;
+
+        updateTask(updatedTask);
       }}
     />
   );
