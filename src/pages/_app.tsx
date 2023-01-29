@@ -1,4 +1,6 @@
-import { MantineProvider } from "@mantine/core";
+import { initLibraries } from "@/lib/common";
+import { logoutUser } from "@/logic/userStore";
+import { MantineProvider, Menu } from "@mantine/core";
 import { NotificationsProvider } from "@mantine/notifications";
 import {
   IconHome,
@@ -12,6 +14,10 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import "../styles/globals.css";
+
+{
+  initLibraries();
+}
 
 export default function App(props: AppProps) {
   const { Component, pageProps } = props;
@@ -64,11 +70,42 @@ const Sidebar = () => {
         ))}
       </div>
       <div className="flex items-center justify-center">
-        <button className="p-2 hover:bg-hover-dark rounded-xl w-min h-min">
-          <IconSettings />
-        </button>
+        <SettingsButton />
       </div>
     </div>
+  );
+};
+
+const SettingsButton = () => {
+  return (
+    <>
+      <Menu
+        shadow="md"
+        position="right-end"
+        width={120}
+        offset={12}
+        withArrow
+        arrowPosition="center"
+      >
+        <Menu.Target>
+          <button className="p-2 hover:bg-hover-dark rounded-xl w-min h-min">
+            <IconSettings />
+          </button>
+        </Menu.Target>
+
+        <Menu.Dropdown>
+          <Menu.Label>Account</Menu.Label>
+          <Menu.Item
+            component="button"
+            onClick={() => {
+              logoutUser();
+            }}
+          >
+            Logout
+          </Menu.Item>
+        </Menu.Dropdown>
+      </Menu>
+    </>
   );
 };
 

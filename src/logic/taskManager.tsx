@@ -1,14 +1,37 @@
-import { Project, Task, TaskOptional } from "@/types/types";
+import {
+  Activity,
+  Project,
+  Task,
+  TaskOptional,
+  TaskSchema,
+} from "@/types/types";
+import { MantineSelectedActivityType } from "@/types/utilTypes";
 import dayjs from "dayjs";
 import { create } from "zustand";
-
-function validationSample() {
-  const task: TaskOptional = {};
-}
 
 export class TaskUtils {
   static getCurrentMonthDateRange(): [Date, Date] {
     return [dayjs().startOf("month").toDate(), dayjs().endOf("month").toDate()];
+  }
+
+  static toTask(taskOptional: TaskOptional): Task {
+    const res = TaskSchema.safeParse(taskOptional);
+
+    if (!res.success) {
+      throw res.error;
+    }
+
+    return res.data;
+  }
+
+  static activityToMantineSelectData(
+    activity: Activity
+  ): MantineSelectedActivityType {
+    return {
+      value: activity,
+      label: activity.name,
+      group: activity.project?.name || "No project",
+    };
   }
 }
 

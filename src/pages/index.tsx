@@ -1,5 +1,13 @@
+import {
+  authenticateAdmin,
+  authenticateUser,
+  userStore,
+} from "@/logic/userStore";
+import { Button } from "@mantine/core";
 import { Inter } from "@next/font/google";
 import Head from "next/head";
+import { Admin, Record } from "pocketbase";
+import { useEffect, useState } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,6 +20,54 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+      <main className="flex flex-col flex-1 ">
+        <header className="p-4">
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+        </header>
+        <div className="flex flex-col flex-1 justify-start items-center mt-10">
+          <UserStatsComponent />
+        </div>
+      </main>
     </>
   );
 }
+
+const UserStatsComponent = () => {
+  const [user, setUser] = useState<Admin | Record | null>(null);
+  const authUser = userStore((state) => state.user);
+
+  useEffect(() => {
+    setUser(authUser);
+  }, [authUser]);
+
+  if (user) {
+    return (
+      <>
+        <div className="text-3xl">
+          <span className="text-green-700">Welcome back</span>
+          <span className="font-bold ml-3 text-indigo-600">{user.email}</span>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div>You are not logged in</div>
+      <Button
+        onClick={() => {
+          authenticateAdmin();
+        }}
+      >
+        Login
+      </Button>
+      <Button
+        onClick={() => {
+          authenticateUser();
+        }}
+      >
+        As user
+      </Button>
+    </>
+  );
+};

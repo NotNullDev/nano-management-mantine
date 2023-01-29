@@ -1,5 +1,7 @@
 import { string, z } from "zod";
 
+// zod schemas
+
 export const TagSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
@@ -8,25 +10,26 @@ export const TagSchema = z.object({
 export const TeamSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  tags: z.array(TagSchema),
+  projectId: string(),
+  tagsIds: z.string().array(),
 });
 
 export const ProjectSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  tags: z.array(TagSchema),
+  organizationId: string(),
+  tagsIds: z.string().array(),
 });
 
 export const OrganizationSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  tags: z.array(TagSchema),
+  tagsIds: z.string().array(),
 });
 
 export const ActivitySchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  duration: z.number(),
   team: TeamSchema.optional(),
   project: ProjectSchema.optional(),
   organization: OrganizationSchema.optional(),
@@ -49,14 +52,16 @@ export const UserSchema = z.object({
 
 export const TaskSchema = z.object({
   id: string().optional(),
-  activity: ActivitySchema,
-  comment: string().min(1).max(255),
+  activityId: string(),
+  comment: string().min(0).max(255),
   duration: z.number(),
   date: string().min(1).max(255),
-  user: UserSchema,
+  userId: string(),
+  teamId: string(),
+  projectId: string(),
 });
 
-// infered types
+// inferred types
 
 export type Tag = z.infer<typeof TagSchema>;
 

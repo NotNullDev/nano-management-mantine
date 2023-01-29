@@ -1,9 +1,33 @@
 import { taskManager, TaskUtils } from "@/logic/taskManager";
+import { NanoUtils } from "@/logic/utils";
+import { Activity, Task, TaskOptional } from "@/types/types";
+import { MantineSelectedActivityType } from "@/types/utilTypes";
 import { Button, NumberInput, Select, TextInput } from "@mantine/core";
 import { DatePicker, DateRangePicker } from "@mantine/dates";
 import { showNotification } from "@mantine/notifications";
-import { IconCalendar, IconCopy, IconPlus } from "@tabler/icons-react";
+import {
+  IconArrowRight,
+  IconCalendar,
+  IconPlus,
+  IconReload,
+} from "@tabler/icons-react";
 import React, { useCallback, useEffect } from "react";
+import { create } from "zustand";
+import { immer } from "zustand/middleware/immer";
+
+type TasksPageStoreType = {
+  currentTask: TaskOptional;
+  tasks: Task[];
+};
+
+const tasksPageStore = create<TasksPageStoreType>()(
+  immer((get, set, store) => {
+    return {
+      currentTask: {},
+      tasks: [],
+    };
+  })
+);
 
 const TasksPage = () => {
   return (
@@ -76,6 +100,7 @@ const TasksRangeDatePicker = () => {
 
   useEffect(() => {
     setValue(taskManager.getActiveDateRange());
+
     const unsub = taskManager.subscribeToActiveDateRange(tasksChangeSubscriber);
 
     return () => {
@@ -103,50 +128,141 @@ const TasksRangeDatePicker = () => {
 };
 
 const Task = () => {
+  const [task, setTask] = React.useState<TaskOptional>({});
+
   return (
     <div className="flex  flex-1 p-4 shadow-xl justify-between items-center">
       <div className="flex gap-4">
-        <Select
-          label="Activity"
-          size="xs"
-          placeholder="Pick one"
-          searchable
-          nothingFound="Not found"
-          withAsterisk
-          defaultValue={"React"}
-          data={["React", "Angular", "Svelte", "Vue"]}
-        />
-        <NumberInput
-          className="w-[150px]"
-          size="xs"
-          defaultValue={0}
-          placeholder="Duration"
-          label="Duration"
-          radius="md"
-          withAsterisk
-          min={0}
-          step={30}
-          formatter={(value) => `${value} min`}
-        />
-        <DatePicker
-          allowFreeInput
-          size="xs"
-          placeholder="Task date"
-          label="Task date"
-          withAsterisk
-        />
-        <TextInput placeholder="Comment" label="Comment (optional)" size="xs" />
+        <ActivitySelector />
+        <TaskDurationSelector />
+
+        <TaskDatePicker />
+
+        <TaskCommentTextInput />
       </div>
 
       <div>
         <Button size="xs">
-          <IconCopy />
+          <IconReload />
         </Button>
         <Button size="xs">
           <IconPlus />
         </Button>
+        <Button size="xs">
+          <IconArrowRight />
+        </Button>
       </div>
     </div>
+  );
+};
+
+const acts = [
+  {
+    name: "Development",
+    project: {
+      name: "Super project",
+      tagsIds: [],
+      organizationId: "",
+    },
+  },
+  {
+    name: "Testing",
+    project: {
+      name: "Super project",
+      tagsIds: [],
+      organizationId: "",
+    },
+  },
+  {
+    name: "Development",
+    project: {
+      name: "The best project",
+      tagsIds: [],
+      organizationId: "",
+    },
+  },
+] as Activity[];
+
+const ActivitySelector = () => {
+  const selectedActivity = tasksPageStore(
+    (state) => state.currentTask.activity
+  );
+  const [data, setData] = React.useState<MantineSelectedActivityType[]>([]);
+
+  useEffect(() => {
+    setData(acts.map(TaskUtils.activityToMantineSelectData));
+  }, []);
+
+  return (
+    <>
+      <Select
+        label="Activity"
+        size="xs"
+        placeholder="Pick one"
+        searchable
+        nothingFound="Not found"
+        withAsterisk
+        // @ts-ignore
+        value={selectedActivity}
+        onChange={(val) => {}}
+        // @ts-ignore
+        data={data}
+      />
+    </>
+  );
+};
+
+const TaskDurationSelector = () => {
+  const [value, setValue] = React.useState<number>(8 * 60);
+  const duration = tasksPageStore((state) => state.currentTask.duration);
+
+  return (
+    <NumberInput
+      className="w-[150px]"
+      size="xs"
+      defaultValue={0}
+      placeholder="Duration"
+      label="Duration"
+      radius="md"
+      precision={0}
+      withAsterisk
+      noClampOnBlur
+      min={0}
+      step={30}
+      value={duration ?? 0}
+      onChange={(val) => {
+        if (!val) return;
+        tasksPageStore.setState((state) => {
+          state.currentTask.duration = val;
+        });
+      }}
+      formatter={(v) => `${NanoUtils.formatMinutes(Number(v ?? 0))}`}
+    />
+  );
+};
+
+const TaskDatePicker = () => {
+  const [value, setValue] = React.useState<Date>(new Date());
+
+  return (
+    <DatePicker
+      allowFreeInput
+      size="xs"
+      placeholder="Task date"
+      label="Task date"
+      withAsterisk
+      value={value}
+      onChange={(val) => {
+        if (!val) return;
+        setValue(val);
+      }}
+    />
+  );
+};
+
+const TaskCommentTextInput = () => {
+  return (
+    <TextInput placeholder="Comment" label="Comment (optional)" size="xs" />
   );
 };
 
