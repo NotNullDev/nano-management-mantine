@@ -31,6 +31,8 @@ export const queryClient = new QueryClient({
         showNotification({
           title: "Failed to fetch or validate data from the server",
           message: "Something went wrong...",
+          autoClose: false,
+          color: "red",
         });
       },
     },

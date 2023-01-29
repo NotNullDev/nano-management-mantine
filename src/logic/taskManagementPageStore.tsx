@@ -12,34 +12,98 @@ import {
   Team,
   TeamSchema,
 } from "@/types/types";
+import { MantineSelectedActivityType } from "@/types/utilTypes";
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
-// store
+// utils
 
+export class TaskUtils {
+  static getCurrentMonthDateRange(): [Date, Date] {
+    return [dayjs().startOf("month").toDate(), dayjs().endOf("month").toDate()];
+  }
+
+  static toTask(taskOptional: TaskOptional): Task {
+    const res = TaskSchema.safeParse(taskOptional);
+
+    if (!res.success) {
+      throw res.error;
+    }
+
+    return res.data;
+  }
+
+  static activityToMantineSelectData(
+    activity: Activity
+  ): MantineSelectedActivityType {
+    const project = getProjectFromId(activity.project);
+
+    return {
+      value: activity,
+      label: activity.name,
+      group: project?.name || "No project",
+    };
+  }
+}
+
+// store
 export type TaskManagementPageStoreType = {
-  currentTask: TaskOptional;
+  // server data
   tasks: Task[];
   teams: Team[];
   activities: Activity[];
   projects: Project[];
   organization: Organization[];
+  // internal state
+  newTaskEntity: TaskOptional;
+  selectedProject: Project | null;
+  selectedTeam: Team | null;
   activeDateRange: [Date, Date];
+  // side effects
+  availableTeams: Team[]; // based on selected project
 };
 
 export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
-  // @ts-ignore (unused variables)
-  immer((set, get, store) => {
-    return {
-      activeDateRange: [new Date(), new Date()],
-      currentTask: null,
-      projects: [],
-      teams: [],
-      tasks: [],
-      organizations: [],
-    };
-  })
+  subscribeWithSelector(
+    // @ts-ignore TODO: fix this
+    immer((_set, _get, _store) => {
+      return {
+        // server data
+        tasks: [] as Task[],
+        teams: [] as Team[],
+        activities: [] as Activity[],
+        projects: [] as Project[],
+        organization: [] as Organization[],
+        // internal state
+        newTaskEntity: {} as TaskOptional,
+        selectedProject: null,
+        selectedTeam: null,
+        activeDateRange: TaskUtils.getCurrentMonthDateRange(),
+        // side effects
+        availableTeams: [] as Team[], // based on selected project
+      };
+    })
+  )
+);
+
+// store subscriptions (side effects)
+
+taskManagementPageStore.subscribe(
+  (state) => state.selectedProject,
+  (curr, prev) => {
+    if (curr) {
+      const availableTeams = taskManagementPageStore
+        .getState()
+        .teams.filter((team) => team.project === curr.id);
+
+      taskManagementPageStore.setState((state) => {
+        state.availableTeams = availableTeams;
+      });
+    }
+  }
 );
 
 // fetch functions
@@ -165,7 +229,7 @@ export function useOrganizations() {
 }
 
 export function useActivities() {
-  const query = useQuery([TASKS_QUERY_KEYS.ACTIVITIES], fetchActivities, {
+  useQuery([TASKS_QUERY_KEYS.ACTIVITIES], fetchActivities, {
     onSuccess: (data) => {
       taskManagementPageStore.setState((state) => {
         state.activities = data;
@@ -222,4 +286,20 @@ export function getTeam(task: Task): Team | undefined {
     .teams.find((team) => team.id === task.team);
 
   return foundTeam;
+}
+
+export function getTeamFromId(teamId: string): Team | undefined {
+  const foundTeam = taskManagementPageStore
+    .getState()
+    .teams.find((team) => team.id === teamId);
+
+  return foundTeam;
+}
+
+export function getTeamFromProjectId(projectId: string): Team[] {
+  const foundTeams = taskManagementPageStore
+    .getState()
+    .teams.filter((team) => team.project === projectId);
+
+  return foundTeams;
 }

@@ -1,8 +1,9 @@
 import {
   taskManagementPageStore,
+  TaskUtils,
   useTaskManagementData,
 } from "@/logic/taskManagementPageStore";
-import { taskManager, TaskUtils } from "@/logic/taskManager";
+import { taskManager } from "@/logic/taskManager";
 import { NanoUtils } from "@/logic/utils";
 import { Task, TaskOptional } from "@/types/types";
 import { MantineSelectedActivityType } from "@/types/utilTypes";
@@ -25,10 +26,10 @@ type TasksPageStoreType = {
 };
 
 const tasksPageStore = create<TasksPageStoreType>()(
+  // @ts-ignore (unused variables)
   immer((get, set, store) => {
     return {
       currentTask: {},
-      tasks: [],
     };
   })
 );
@@ -63,22 +64,42 @@ const NanoToolbar = () => {
         </Button>
       </div>
       <div className="flex gap-3">
-        <Select
-          label="Project"
-          placeholder="Pick one"
-          searchable
-          nothingFound="No options"
-          data={["React", "Angular", "Svelte", "Vue"]}
-        />
-        <Select
-          label="Team"
-          placeholder="Pick one"
-          searchable
-          nothingFound="No options"
-          data={["React", "Angular", "Svelte", "Vue"]}
-        />
+        <ProjectSelector />
+        <TeamSelector />
       </div>
     </div>
+  );
+};
+
+const ProjectSelector = () => {
+  const availableProjects = taskManagementPageStore((state) => state.projects);
+
+  return (
+    <>
+      <Select
+        label="Project"
+        placeholder="Pick one"
+        searchable
+        nothingFound="No options"
+        data={availableProjects.map((project) => project.name)}
+      />
+    </>
+  );
+};
+
+const TeamSelector = () => {
+  const availableTeams = taskManagementPageStore((state) => state.teams);
+
+  return (
+    <>
+      <Select
+        label="Team"
+        placeholder="Pick one"
+        searchable
+        nothingFound="No options"
+        data={availableTeams.map((team) => team.name)}
+      />
+    </>
   );
 };
 
@@ -139,6 +160,7 @@ const Task = () => {
     <div className="flex  flex-1 p-4 shadow-xl justify-between items-center">
       <div className="flex gap-4">
         <ActivitySelector />
+
         <TaskDurationSelector />
 
         <TaskDatePicker />

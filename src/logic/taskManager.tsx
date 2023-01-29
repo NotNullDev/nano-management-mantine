@@ -1,42 +1,6 @@
-import {
-  Activity,
-  Project,
-  Task,
-  TaskOptional,
-  TaskSchema,
-} from "@/types/types";
-import { MantineSelectedActivityType } from "@/types/utilTypes";
-import dayjs from "dayjs";
+import { Project, Task } from "@/types/types";
 import { create } from "zustand";
-import { getProjectFromId } from "./taskManagementPageStore";
-
-export class TaskUtils {
-  static getCurrentMonthDateRange(): [Date, Date] {
-    return [dayjs().startOf("month").toDate(), dayjs().endOf("month").toDate()];
-  }
-
-  static toTask(taskOptional: TaskOptional): Task {
-    const res = TaskSchema.safeParse(taskOptional);
-
-    if (!res.success) {
-      throw res.error;
-    }
-
-    return res.data;
-  }
-
-  static activityToMantineSelectData(
-    activity: Activity
-  ): MantineSelectedActivityType {
-    const project = getProjectFromId(activity.project);
-
-    return {
-      value: activity,
-      label: activity.name,
-      group: project?.name || "No project",
-    };
-  }
-}
+import { TaskUtils } from "./taskManagementPageStore";
 
 type TasksStore = {
   tasks: Task[];
