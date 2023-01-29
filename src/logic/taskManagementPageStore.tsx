@@ -1,3 +1,4 @@
+import { showDebug } from "@/lib/debug";
 import { pocketbase } from "@/lib/pocketbase";
 import {
   Activity,
@@ -39,12 +40,16 @@ export class TaskUtils {
   static activityToMantineSelectData(
     activity: Activity
   ): MantineSelectedActivityType {
-    const project = getProjectFromId(activity.project);
+    const team = getTeamFromId(activity.team);
+    const project = getProjectFromId(team?.project || "");
+
+    const groupLabel =
+      project && team ? `${team.name} | ${project.name}` : "No team";
 
     return {
       value: activity,
       label: activity.name,
-      group: project?.name || "No project",
+      group: groupLabel,
     };
   }
 }
@@ -61,9 +66,14 @@ export type TaskManagementPageStoreType = {
   newTaskEntity: TaskOptional;
   selectedProject: Project | null;
   selectedTeam: Team | null;
+  selectedActivity: Activity | null;
+  selectedComment: string;
+  selectedDate: Date;
+  selectedDuration: number;
   activeDateRange: [Date, Date];
   // side effects
   availableTeams: Team[]; // based on selected project
+  availableActivities: Activity[]; // based on selected team
 };
 
 export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
@@ -81,15 +91,22 @@ export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
         newTaskEntity: {} as TaskOptional,
         selectedProject: null,
         selectedTeam: null,
+        selectedComment: "",
+        // 2022-06-25 11:03:50.052
+        selectedDate: new Date(),
+        selectedDuration: 8.0,
         activeDateRange: TaskUtils.getCurrentMonthDateRange(),
         // side effects
         availableTeams: [] as Team[], // based on selected project
+        availableActivities: [] as Activity[], // based on selected team
       };
     })
   )
 );
 
 // store subscriptions (side effects)
+
+// ON SELECTED PROJECT CHANGE
 
 taskManagementPageStore.subscribe(
   (state) => state.selectedProject,
@@ -102,6 +119,61 @@ taskManagementPageStore.subscribe(
       taskManagementPageStore.setState((state) => {
         state.availableTeams = availableTeams;
       });
+
+      // if there is only one team in the selected project, select it
+      if (availableTeams.length === 1) {
+        taskManagementPageStore.setState((state) => {
+          state.selectedTeam = availableTeams[0];
+        });
+      }
+    }
+  }
+);
+
+// if there is only one project, select it
+
+// ON SERVER PROJECTS CHANGE
+
+taskManagementPageStore.subscribe(
+  (state) => state.projects,
+  (curr, prev) => {
+    if (curr.length === 1) {
+      taskManagementPageStore.setState((state) => {
+        state.selectedProject = curr[0];
+      });
+    }
+  }
+);
+
+// ON SELECTED TEAM CHANGE
+
+taskManagementPageStore.subscribe(
+  (state) => state.selectedTeam,
+  (curr, prev) => {
+    if (curr && curr.id) {
+      updateAvailableActivities(curr.id);
+    }
+  }
+);
+
+// ON SELCETED PROJECT CHANGE
+
+taskManagementPageStore.subscribe(
+  (state) => state.selectedProject,
+  (curr, prev) => {
+    if (curr && curr.id) {
+      updateAvailableTeams();
+    }
+  }
+);
+
+taskManagementPageStore.subscribe(
+  (state) => state.activities,
+  (curr) => {
+    const selectedTeam = taskManagementPageStore.getState().selectedTeam;
+
+    if (selectedTeam && selectedTeam.id) {
+      updateAvailableActivities(selectedTeam.id);
     }
   }
 );
@@ -302,4 +374,77 @@ export function getTeamFromProjectId(projectId: string): Team[] {
     .teams.filter((team) => team.project === projectId);
 
   return foundTeams;
+}
+
+export function getProjectFromName(name: string): Project | undefined {
+  const foundProject = taskManagementPageStore
+    .getState()
+    .projects.find((project) => project.name === name);
+
+  return foundProject;
+}
+
+export function getTeamFromName(name: string): Team | undefined {
+  const foundTeam = taskManagementPageStore
+    .getState()
+    .teams.find((team) => team.name === name);
+
+  return foundTeam;
+}
+
+export function getActivityFromId(id: string): Activity | undefined {
+  const foundActivity = taskManagementPageStore
+    .getState()
+    .activities.find((activity) => activity.id === id);
+
+  return foundActivity;
+}
+
+export function getAvailableActivityFromName(
+  name: string
+): Activity | undefined {
+  const foundActivity = taskManagementPageStore
+    .getState()
+    .activities.find((activity) => activity.name === name);
+
+  return foundActivity;
+}
+
+function updateAvailableActivities(selectedTeamId: string) {
+  const availableActivities = taskManagementPageStore
+    .getState()
+    .activities.filter((activity) => activity.team === selectedTeamId);
+
+  taskManagementPageStore.setState((state) => {
+    state.availableActivities = availableActivities;
+  });
+
+  // if there is only one activity in the selected team, select it
+  if (availableActivities.length === 1) {
+    taskManagementPageStore.setState((state) => {
+      state.selectedActivity = availableActivities[0];
+    });
+  }
+}
+
+function updateAvailableTeams() {
+  const selectedProject = taskManagementPageStore.getState().selectedProject;
+
+  const availableTeams = taskManagementPageStore
+    .getState()
+    .teams.filter((team) => team.project === selectedProject?.id);
+
+  taskManagementPageStore.setState((state) => {
+    state.availableTeams = availableTeams;
+  });
+
+  // if there is only one team in the selected project, select it
+  if (availableTeams.length === 1) {
+    taskManagementPageStore.setState((state) => {
+      state.selectedTeam = availableTeams[0];
+    });
+  }
+  showDebug({
+    message: `updateAvailableTeams: ${availableTeams.length} teams found`,
+  });
 }

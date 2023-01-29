@@ -1,13 +1,25 @@
+import { showDebug } from "@/lib/debug";
+import { pocketbase } from "@/lib/pocketbase";
 import {
+  getAvailableActivityFromName,
+  getProjectFromName,
+  getTeamFromName,
   taskManagementPageStore,
   TaskUtils,
   useTaskManagementData,
 } from "@/logic/taskManagementPageStore";
 import { taskManager } from "@/logic/taskManager";
-import { NanoUtils } from "@/logic/utils";
-import { Task, TaskOptional } from "@/types/types";
-import { MantineSelectedActivityType } from "@/types/utilTypes";
-import { Button, NumberInput, Select, TextInput } from "@mantine/core";
+import { userStore } from "@/logic/userStore";
+import { Task, TaskOptional, TaskSchema } from "@/types/types";
+import {
+  Box,
+  Button,
+  NumberInput,
+  Overlay,
+  Select,
+  TextInput,
+  Tooltip,
+} from "@mantine/core";
 import { DatePicker, DateRangePicker } from "@mantine/dates";
 import { showNotification } from "@mantine/notifications";
 import {
@@ -16,23 +28,14 @@ import {
   IconPlus,
   IconReload,
 } from "@tabler/icons-react";
-import React, { useCallback, useEffect } from "react";
-import { create } from "zustand";
-import { immer } from "zustand/middleware/immer";
+import dayjs from "dayjs";
+import React, { useCallback, useEffect, useState } from "react";
+import { ZodError } from "zod";
 
 type TasksPageStoreType = {
   currentTask: TaskOptional;
   tasks: Task[];
 };
-
-const tasksPageStore = create<TasksPageStoreType>()(
-  // @ts-ignore (unused variables)
-  immer((get, set, store) => {
-    return {
-      currentTask: {},
-    };
-  })
-);
 
 const TasksPage = () => {
   useTaskManagementData();
@@ -50,18 +53,16 @@ export default TasksPage;
 const NanoToolbar = () => {
   return (
     <div className="flex justify-between my-10">
-      <div className="flex gap-1 items-end">
+      <div className="flex gap-2 items-end">
         <TasksRangeDatePicker />
-        <Button
+        <IconReload
           onClick={() => {
             taskManager.setActiveDateRange(
               ...TaskUtils.getCurrentMonthDateRange()
             );
           }}
-          variant="subtle"
-        >
-          Current month
-        </Button>
+          className="cursor-pointer active:rotate-[359deg] transition-all mb-2"
+        />
       </div>
       <div className="flex gap-3">
         <ProjectSelector />
@@ -73,6 +74,9 @@ const NanoToolbar = () => {
 
 const ProjectSelector = () => {
   const availableProjects = taskManagementPageStore((state) => state.projects);
+  const selectedProject = taskManagementPageStore(
+    (state) => state.selectedProject
+  );
 
   return (
     <>
@@ -81,23 +85,55 @@ const ProjectSelector = () => {
         placeholder="Pick one"
         searchable
         nothingFound="No options"
+        value={selectedProject?.name}
         data={availableProjects.map((project) => project.name)}
+        onChange={(value) => {
+          if (!value) return;
+
+          const project = getProjectFromName(value);
+
+          if (!project) return;
+
+          taskManagementPageStore.setState((state) => {
+            state.selectedProject = project;
+          });
+        }}
       />
     </>
   );
 };
 
 const TeamSelector = () => {
-  const availableTeams = taskManagementPageStore((state) => state.teams);
+  const availableTeams = taskManagementPageStore(
+    (state) => state.availableTeams
+  );
+  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+  const selectedProject = taskManagementPageStore(
+    (state) => state.selectedProject
+  );
 
   return (
     <>
       <Select
         label="Team"
+        key={selectedProject?.name}
         placeholder="Pick one"
         searchable
         nothingFound="No options"
+        disabled={!selectedProject}
+        value={selectedTeam?.name}
         data={availableTeams.map((team) => team.name)}
+        onChange={(value) => {
+          if (!value) return;
+
+          const team = getTeamFromName(value);
+
+          if (!team) return;
+
+          taskManagementPageStore.setState((state) => {
+            state.selectedTeam = team;
+          });
+        }}
       />
     </>
   );
@@ -155,10 +191,23 @@ const TasksRangeDatePicker = () => {
 
 const Task = () => {
   const [task, setTask] = React.useState<TaskOptional>({});
+  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+  const availableActivities = taskManagementPageStore(
+    (state) => state.availableActivities
+  );
 
   return (
-    <div className="flex  flex-1 p-4 shadow-xl justify-between items-center">
-      <div className="flex gap-4">
+    <Box className="flex  flex-1 p-4 shadow-xl justify-between items-center relative">
+      {(!selectedTeam || availableActivities.length === 0) && (
+        <Tooltip
+          label="Select team must have at least one activity"
+          withArrow
+          offset={8}
+        >
+          <Overlay className=" bg-black/70 z-10 cursor-not-allowed" />
+        </Tooltip>
+      )}
+      <div className="flex gap-4 ">
         <ActivitySelector />
 
         <TaskDurationSelector />
@@ -168,80 +217,143 @@ const Task = () => {
         <TaskCommentTextInput />
       </div>
 
-      <div>
-        <Button size="xs">
-          <IconReload />
-        </Button>
-        <Button size="xs">
-          <IconPlus />
-        </Button>
-        <Button size="xs">
-          <IconArrowRight />
-        </Button>
-      </div>
-    </div>
+      <NewTaskControlButton />
+    </Box>
   );
 };
 
+const NewTaskControlButton = () => {
+  return (
+    <>
+      <div>
+        <Button size="xs" onClick={onResetTask}>
+          <IconReload />
+        </Button>
+        <Button size="xs" onCanPlay={onCopyLastTask}>
+          <IconPlus />
+        </Button>
+        <Button size="xs" onClick={onAddTask}>
+          <IconArrowRight />
+        </Button>
+      </div>
+    </>
+  );
+};
+
+async function onAddTask() {
+  const task = {
+    activity: taskManagementPageStore.getState().selectedActivity?.id,
+    comment: taskManagementPageStore.getState().selectedComment,
+    date: dayjs(taskManagementPageStore.getState().selectedDate)
+      .format("YYYY-MM-DD HH:mm:ss.SSS")
+      .toString(),
+    duration: taskManagementPageStore.getState().selectedDuration,
+    team: taskManagementPageStore.getState().selectedTeam?.id,
+    user: userStore.getState().user?.id,
+  } as TaskOptional;
+
+  try {
+    TaskSchema.parse(task);
+  } catch (e) {
+    const err = e as ZodError;
+    showNotification({
+      title: "Error creating task",
+      message: err.message,
+      color: "red",
+    });
+    return;
+  }
+
+  await pocketbase.collection("tasks").create({
+    ...task,
+  });
+  showNotification({
+    message: "Task added",
+  });
+}
+
+function onCopyLastTask() {
+  const task = taskManagementPageStore.getState();
+
+  showDebug({
+    message: "Task added",
+  });
+}
+
+function onResetTask() {
+  const task = taskManagementPageStore.getState();
+
+  showDebug({
+    message: "Task added",
+  });
+}
+
 const ActivitySelector = () => {
   const availableActivities = taskManagementPageStore(
-    (state) => state.activities
+    (state) => state.availableActivities
   );
-  const selectedActivity = tasksPageStore(
-    (state) => state.currentTask.activity
+  const selectedActivity = taskManagementPageStore(
+    (state) => state.selectedActivity
   );
-  const [data, setData] = React.useState<MantineSelectedActivityType[]>([]);
-
-  useEffect(() => {
-    if (availableActivities) {
-      setData(availableActivities.map(TaskUtils.activityToMantineSelectData));
-    }
-  }, [availableActivities]);
+  const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
 
   return (
     <>
       <Select
         label="Activity"
         size="xs"
+        key={selectedTeam?.id}
         placeholder="Pick one"
         searchable
         nothingFound="Not found"
         withAsterisk
-        // @ts-ignore
-        value={selectedActivity}
-        onChange={(val) => {}}
-        // @ts-ignore
-        data={data}
+        value={selectedActivity?.name}
+        onChange={(val) => {
+          if (!val) return;
+
+          const activity = getAvailableActivityFromName(val);
+
+          if (!activity) return;
+
+          taskManagementPageStore.setState((state) => {
+            state.selectedActivity = activity;
+          });
+        }}
+        data={availableActivities?.map((activity) => activity.name)}
       />
     </>
   );
 };
 
 const TaskDurationSelector = () => {
-  const [value, setValue] = React.useState<number>(8 * 60);
-  const duration = tasksPageStore((state) => state.currentTask.duration);
+  const [value, setValue] = React.useState<number>(8.0);
+  const formattedValue = useState("");
+  const duration = taskManagementPageStore((state) => state.selectedDuration);
 
   return (
     <NumberInput
       className="w-[150px]"
       size="xs"
-      defaultValue={0}
+      defaultValue={8}
       placeholder="Duration"
-      label="Duration"
+      label="Duration (hours)"
       radius="md"
-      precision={0}
+      precision={1}
       withAsterisk
-      noClampOnBlur
+      onFocus={(e) => {
+        e.currentTarget.select();
+      }}
       min={0}
-      step={30}
-      value={duration ?? 0}
+      step={0.5}
+      max={24}
+      onBlur={(e) => {}}
+      value={duration}
       onChange={(val) => {
         if (!val) return;
-        tasksPageStore.setState((state) => {
-          state.currentTask.duration = val;
+        taskManagementPageStore.setState((state) => {
+          state.selectedDuration = val;
         });
       }}
-      formatter={(v) => `${NanoUtils.formatMinutes(Number(v ?? 0))}`}
     />
   );
 };
@@ -266,8 +378,22 @@ const TaskDatePicker = () => {
 };
 
 const TaskCommentTextInput = () => {
+  const selectedComment = taskManagementPageStore(
+    (state) => state.selectedComment
+  );
+
   return (
-    <TextInput placeholder="Comment" label="Comment (optional)" size="xs" />
+    <TextInput
+      placeholder="Comment"
+      label="Comment (optional)"
+      size="xs"
+      value={selectedComment}
+      onChange={(e) => {
+        taskManagementPageStore.setState((state) => {
+          state.selectedComment = e.currentTarget.value;
+        });
+      }}
+    />
   );
 };
 
