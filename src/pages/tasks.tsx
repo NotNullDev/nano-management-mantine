@@ -1,6 +1,10 @@
+import {
+  taskManagementPageStore,
+  useTaskManagementData,
+} from "@/logic/taskManagementPageStore";
 import { taskManager, TaskUtils } from "@/logic/taskManager";
 import { NanoUtils } from "@/logic/utils";
-import { Activity, Task, TaskOptional } from "@/types/types";
+import { Task, TaskOptional } from "@/types/types";
 import { MantineSelectedActivityType } from "@/types/utilTypes";
 import { Button, NumberInput, Select, TextInput } from "@mantine/core";
 import { DatePicker, DateRangePicker } from "@mantine/dates";
@@ -30,6 +34,7 @@ const tasksPageStore = create<TasksPageStoreType>()(
 );
 
 const TasksPage = () => {
+  useTaskManagementData();
   return (
     <div className="flex flex-col flex-1 p-4">
       <h1 className="text-2xl font-bold mt-10 ml-5">Tasks management</h1>
@@ -156,42 +161,20 @@ const Task = () => {
   );
 };
 
-const acts = [
-  {
-    name: "Development",
-    project: {
-      name: "Super project",
-      tagsIds: [],
-      organizationId: "",
-    },
-  },
-  {
-    name: "Testing",
-    project: {
-      name: "Super project",
-      tagsIds: [],
-      organizationId: "",
-    },
-  },
-  {
-    name: "Development",
-    project: {
-      name: "The best project",
-      tagsIds: [],
-      organizationId: "",
-    },
-  },
-] as Activity[];
-
 const ActivitySelector = () => {
+  const availableActivities = taskManagementPageStore(
+    (state) => state.activities
+  );
   const selectedActivity = tasksPageStore(
     (state) => state.currentTask.activity
   );
   const [data, setData] = React.useState<MantineSelectedActivityType[]>([]);
 
   useEffect(() => {
-    setData(acts.map(TaskUtils.activityToMantineSelectData));
-  }, []);
+    if (availableActivities) {
+      setData(availableActivities.map(TaskUtils.activityToMantineSelectData));
+    }
+  }, [availableActivities]);
 
   return (
     <>

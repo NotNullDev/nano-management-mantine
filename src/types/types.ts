@@ -10,29 +10,29 @@ export const TagSchema = z.object({
 export const TeamSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  projectId: string(),
-  tagsIds: z.string().array(),
+  project: string(),
+  tags: z.string().array(),
 });
 
 export const ProjectSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  organizationId: string(),
-  tagsIds: z.string().array(),
+  organization: string(),
+  tags: z.string().array(),
 });
 
 export const OrganizationSchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  tagsIds: z.string().array(),
+  tags: z.string().array(),
 });
 
 export const ActivitySchema = z.object({
   id: string().optional(),
   name: string().min(1).max(255),
-  team: TeamSchema.optional(),
-  project: ProjectSchema.optional(),
-  organization: OrganizationSchema.optional(),
+  team: string(),
+  project: string(),
+  organization: string(),
 });
 
 export const UserRoleSchema = z.object({
@@ -52,13 +52,12 @@ export const UserSchema = z.object({
 
 export const TaskSchema = z.object({
   id: string().optional(),
-  activityId: string(),
+  activity: string(),
   comment: string().min(0).max(255),
   duration: z.number(),
   date: string().min(1).max(255),
-  userId: string(),
-  teamId: string(),
-  projectId: string(),
+  user: string(),
+  team: string(),
 });
 
 // inferred types

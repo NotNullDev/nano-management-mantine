@@ -1,4 +1,5 @@
 import { initLibraries } from "@/lib/common";
+import { queryClient } from "@/lib/tanstackQuery";
 import { logoutUser } from "@/logic/userStore";
 import { MantineProvider, Menu } from "@mantine/core";
 import { NotificationsProvider } from "@mantine/notifications";
@@ -8,6 +9,7 @@ import {
   IconTimeline,
   IconUsers,
 } from "@tabler/icons-react";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { AppProps } from "next/app";
 import Head from "next/head";
 import Link from "next/link";
@@ -31,22 +33,23 @@ export default function App(props: AppProps) {
           content="minimum-scale=1, initial-scale=1, width=device-width"
         />
       </Head>
-
-      <MantineProvider
-        withGlobalStyles
-        withNormalizeCSS
-        theme={{
-          /** Put your mantine theme override here */
-          colorScheme: "dark",
-        }}
-      >
-        <NotificationsProvider>
-          <div className="flex-1 flex">
-            <Sidebar />
-            <Component {...pageProps} />
-          </div>
-        </NotificationsProvider>
-      </MantineProvider>
+      <QueryClientProvider client={queryClient}>
+        <MantineProvider
+          withGlobalStyles
+          withNormalizeCSS
+          theme={{
+            /** Put your mantine theme override here */
+            colorScheme: "dark",
+          }}
+        >
+          <NotificationsProvider>
+            <div className="flex-1 flex">
+              <Sidebar />
+              <Component {...pageProps} />
+            </div>
+          </NotificationsProvider>
+        </MantineProvider>
+      </QueryClientProvider>
     </div>
   );
 }

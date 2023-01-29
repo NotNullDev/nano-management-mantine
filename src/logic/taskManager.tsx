@@ -8,6 +8,7 @@ import {
 import { MantineSelectedActivityType } from "@/types/utilTypes";
 import dayjs from "dayjs";
 import { create } from "zustand";
+import { getProjectFromId } from "./taskManagementPageStore";
 
 export class TaskUtils {
   static getCurrentMonthDateRange(): [Date, Date] {
@@ -27,10 +28,12 @@ export class TaskUtils {
   static activityToMantineSelectData(
     activity: Activity
   ): MantineSelectedActivityType {
+    const project = getProjectFromId(activity.project);
+
     return {
       value: activity,
       label: activity.name,
-      group: activity.project?.name || "No project",
+      group: project?.name || "No project",
     };
   }
 }
