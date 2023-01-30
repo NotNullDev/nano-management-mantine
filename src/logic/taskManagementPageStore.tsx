@@ -18,6 +18,7 @@ import dayjs from "dayjs";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { userStore } from "./userStore";
 
 // utils
 
@@ -57,6 +58,18 @@ export class TaskUtils {
       value: activity,
       label: activity.name,
       group: groupLabel,
+    };
+  }
+
+  static getEmptyTaskOptional(): TaskOptional {
+    return {
+      id: undefined,
+      activity: "",
+      comment: "",
+      date: TaskUtils.formatDate(new Date()),
+      duration: 8.0,
+      team: taskManagementPageStore.getState().selectedTeam?.id || undefined,
+      user: userStore.getState().user?.id || undefined,
     };
   }
 }

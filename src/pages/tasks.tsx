@@ -1,4 +1,5 @@
 import { pocketbase } from "@/lib/pocketbase";
+import { queryClient } from "@/lib/tanstackQuery";
 import {
   getActivityFromId,
   getAvailableActivitiesForTask,
@@ -6,6 +7,7 @@ import {
   getProjectFromName,
   getTeamFromName,
   taskManagementPageStore,
+  TASKS_QUERY_KEYS,
   TaskUtils,
   useTaskManagementData,
 } from "@/logic/taskManagementPageStore";
@@ -14,8 +16,10 @@ import { Task as NewTask, TaskOptional, TaskSchema } from "@/types/types";
 import {
   Box,
   Button,
+  Divider,
   NumberInput,
   Overlay,
+  ScrollArea,
   Select,
   TextInput,
   Tooltip,
@@ -23,6 +27,7 @@ import {
 import { DatePicker, DateRangePicker } from "@mantine/dates";
 import { showNotification } from "@mantine/notifications";
 import {
+  IconArrowDown,
   IconCalendar,
   IconCheck,
   IconPlus,
@@ -39,11 +44,11 @@ type TasksPageStoreType = {
 const TasksPage = () => {
   useTaskManagementData();
   return (
-    <div className="flex flex-col flex-1 p-4">
+    <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
       <h1 className="text-2xl font-bold mt-10 ml-5">Tasks management</h1>
       <NanoToolbar />
       <TasksArea />
-    </div>
+    </ScrollArea>
   );
 };
 
@@ -143,7 +148,17 @@ const TasksArea = () => {
 
   return (
     <div>
+      <h2 className="text-2xl mb-4">New task</h2>
       <EditableTask />
+      <Divider className="my-4" />
+      <div className="flex w-full justify-between">
+        <h2 className="text-2xl mb-4">Previous tasks (not accepted)</h2>
+        <div className="flex gap-3">
+          <Button color="violet" leftIcon={<IconArrowDown />}>
+            Time descending
+          </Button>
+        </div>
+      </div>
       {tasks.map((task) => {
         return <NewTask key={task.id} task={task} />;
       })}
@@ -152,8 +167,15 @@ const TasksArea = () => {
 };
 
 const EditableTask = () => {
-  const [task, setTask] = React.useState<TaskOptional>({});
+  const [task, setTask] = React.useState<TaskOptional>(
+    TaskUtils.getEmptyTaskOptional()
+  );
   const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+
+  useEffect(() => {
+    if (!selectedTeam) return;
+    setTask((old) => ({ ...old, team: selectedTeam.id }));
+  }, [selectedTeam]);
 
   return <NewTask task={task} key={selectedTeam?.id} />;
 };
@@ -166,9 +188,6 @@ const TasksRangeDatePicker = () => {
 
   const tasksChangeSubscriber = useCallback((range: [from: Date, to: Date]) => {
     setValue([range[0], range[1]]);
-    showNotification({
-      message: "hahaa!",
-    });
   }, []);
 
   useEffect(() => {
@@ -299,6 +318,7 @@ async function onUpdateTask(task: TaskOptional) {
     ...validatedTask,
   });
 
+  await queryClient.invalidateQueries([TASKS_QUERY_KEYS.TASKS]);
   showNotification({
     title: "Task updated",
     message: "Task has been updated",
@@ -327,6 +347,7 @@ async function onAddTask(task: TaskOptional) {
     ...validatedTask,
   });
 
+  await queryClient.invalidateQueries([TASKS_QUERY_KEYS.TASKS]);
   showNotification({
     title: "Task created",
     message: "Task has been created",
