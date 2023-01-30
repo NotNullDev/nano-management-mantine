@@ -36,6 +36,7 @@ export default function App(props: AppProps) {
       <QueryClientProvider client={queryClient}>
         <MantineProvider
           withGlobalStyles
+          withCSSVariables
           withNormalizeCSS
           theme={{
             /** Put your mantine theme override here */

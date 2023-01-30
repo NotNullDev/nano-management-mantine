@@ -1,3 +1,4 @@
+import { showDebug } from "@/lib/debug";
 import { pocketbase } from "@/lib/pocketbase";
 import { queryClient } from "@/lib/tanstackQuery";
 import {
@@ -11,8 +12,7 @@ import {
   TaskUtils,
   useTaskManagementData,
 } from "@/logic/taskManagementPageStore";
-import { taskManager } from "@/logic/taskManager";
-import { Task as NewTask, TaskOptional, TaskSchema } from "@/types/types";
+import { Task as SingleTask, TaskOptional, TaskSchema } from "@/types/types";
 import {
   Box,
   Button,
@@ -33,12 +33,12 @@ import {
   IconPlus,
   IconReload,
 } from "@tabler/icons-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ZodError } from "zod";
 
 type TasksPageStoreType = {
   currentTask: TaskOptional;
-  tasks: NewTask[];
+  tasks: SingleTask[];
 };
 
 const TasksPage = () => {
@@ -61,9 +61,9 @@ const NanoToolbar = () => {
         <TasksRangeDatePicker />
         <IconReload
           onClick={() => {
-            taskManager.setActiveDateRange(
-              ...TaskUtils.getCurrentMonthDateRange()
-            );
+            taskManagementPageStore.setState((state) => {
+              state.activeDateRange = TaskUtils.getCurrentMonthDateRange();
+            });
           }}
           className="cursor-pointer active:rotate-[359deg] transition-all mb-2"
         />
@@ -160,7 +160,7 @@ const TasksArea = () => {
         </div>
       </div>
       {tasks.map((task) => {
-        return <NewTask key={task.id} task={task} />;
+        return <SingleTask key={task.id} task={task} />;
       })}
     </div>
   );
@@ -177,28 +177,23 @@ const EditableTask = () => {
     setTask((old) => ({ ...old, team: selectedTeam.id }));
   }, [selectedTeam]);
 
-  return <NewTask task={task} key={selectedTeam?.id} />;
+  return <SingleTask task={task} key={selectedTeam?.id} />;
 };
 
 const TasksRangeDatePicker = () => {
-  const [value, setValue] = React.useState<[Date, Date]>([
-    new Date(),
-    new Date(),
-  ]);
+  const [value, setValue] = React.useState<[Date, Date]>(
+    TaskUtils.getCurrentMonthDateRange()
+  );
 
-  const tasksChangeSubscriber = useCallback((range: [from: Date, to: Date]) => {
-    setValue([range[0], range[1]]);
-  }, []);
+  const activeDateRange = taskManagementPageStore(
+    (state) => state.activeDateRange
+  );
 
   useEffect(() => {
-    setValue(taskManager.getActiveDateRange());
-
-    const unsub = taskManager.subscribeToActiveDateRange(tasksChangeSubscriber);
-
-    return () => {
-      unsub();
-    };
-  }, []);
+    if (!activeDateRange) return;
+    setValue(activeDateRange);
+    queryClient.invalidateQueries([TASKS_QUERY_KEYS.TASKS]);
+  }, [activeDateRange]);
 
   return (
     <DateRangePicker
@@ -212,14 +207,22 @@ const TasksRangeDatePicker = () => {
         if (!val || val.length !== 2 || !val[0] || !val[1]) return;
         const [from, to] = val;
 
-        taskManager.setActiveDateRange(from, to);
+        taskManagementPageStore.setState((state) => {
+          state.activeDateRange = [from, to];
+        });
+
+        showDebug({
+          message: `${TaskUtils.formatDate(from)} - ${TaskUtils.formatDate(
+            to
+          )}`,
+        });
       }}
       clearable={false}
     />
   );
 };
 
-const NewTask = ({ task }: { task: TaskOptional }) => {
+const SingleTask = ({ task }: { task: TaskOptional }) => {
   const [workTask, setWorkTask] = useState<TaskOptional>(task);
   const [availableActivities, setAvailableActivities] = useState(
     getAvailableActivitiesForTask(task)
@@ -246,7 +249,7 @@ const NewTask = ({ task }: { task: TaskOptional }) => {
     >
       {(!selectedTeam || availableActivities.length === 0) && (
         <Tooltip
-          label="Select team must have at least one activity"
+          label="Selected team must have at least one activity"
           withArrow
           offset={8}
         >
@@ -298,7 +301,7 @@ const NewTaskControlButton = ({
 async function onUpdateTask(task: TaskOptional) {
   if (!task.id) return;
 
-  let validatedTask: NewTask | undefined = undefined;
+  let validatedTask: SingleTask | undefined = undefined;
 
   try {
     validatedTask = TaskSchema.parse(task);
@@ -327,7 +330,7 @@ async function onUpdateTask(task: TaskOptional) {
 }
 
 async function onAddTask(task: TaskOptional) {
-  let validatedTask: NewTask | undefined = undefined;
+  let validatedTask: SingleTask | undefined = undefined;
 
   try {
     validatedTask = TaskSchema.parse(task);

@@ -152,8 +152,6 @@ taskManagementPageStore.subscribe(
   }
 );
 
-// if there is only one project, select it
-
 // ON SERVER PROJECTS CHANGE
 
 taskManagementPageStore.subscribe(
@@ -227,9 +225,13 @@ export async function fetchTasks() {
   return validData;
 }
 
-export async function fetchTasksWhereTeam(teamId: string) {
+export async function fetchTasksWhereTeamAndDateBetween(
+  teamId: string,
+  dateStart: string,
+  dateEnd: string
+) {
   const tasks = await pocketbase.collection("tasks").getFullList(undefined, {
-    filter: `team.id = '${teamId}'`,
+    filter: `team.id = '${teamId}' && date >= "${dateStart}" && date <= "${dateEnd}"`,
   });
 
   const validData = tasks.map((d) => TaskSchema.parse(d));
@@ -286,11 +288,21 @@ export class TASKS_QUERY_KEYS {
 
 export function useTasks() {
   const selectedTeam = taskManagementPageStore((state) => state.selectedTeam);
+  const [dateStart, dateEnd] = taskManagementPageStore(
+    (state) => state.activeDateRange
+  );
+
+  const formattedDateStart = TaskUtils.formatDate(dateStart);
+  const formattedDateEnd = TaskUtils.formatDate(dateEnd);
 
   const query = useQuery(
-    [TASKS_QUERY_KEYS.TASKS, selectedTeam?.id],
+    [TASKS_QUERY_KEYS.TASKS, selectedTeam?.id, dateStart, dateEnd],
     async () => {
-      return fetchTasksWhereTeam(selectedTeam?.id ?? "---");
+      return fetchTasksWhereTeamAndDateBetween(
+        selectedTeam?.id ?? "---",
+        formattedDateStart,
+        formattedDateEnd
+      );
     },
     {
       onSuccess: (data) => {
