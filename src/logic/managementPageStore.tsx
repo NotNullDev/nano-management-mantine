@@ -28,6 +28,7 @@ export type ManagementPageStore = {
   users: User[];
   selectedProject: Project | null;
   selectedTeam: Team | null;
+  hideEmptyTeams: boolean;
 };
 
 export const managementPageStore = create<ManagementPageStore>()(
@@ -38,6 +39,7 @@ export const managementPageStore = create<ManagementPageStore>()(
       users: [],
       selectedProject: null,
       selectedTeam: null,
+      hideEmptyTeams: false,
     };
   })
 );
@@ -67,6 +69,8 @@ async function fetchTasks(teamId: string): Promise<Task[]> {
     filters.push(`team.managers.id = '${currentUserId}'`);
   }
 
+  filters.push("accepted = '' && rejected = ''");
+
   const teams = await pocketbase.collection("tasks").getFullList(undefined, {
     filter: NanoUtils.joinAndFilters(filters),
   });
@@ -88,6 +92,26 @@ async function fetchUsers(userIds: string[]): Promise<User[]> {
   const validatedData = users.map((u) => UserSchema.parse(u));
 
   return validatedData;
+}
+
+export async function acceptTasks(tasksIds: string[]): Promise<void> {
+  const currentUserId = userStore.getState().user?.id ?? "";
+
+  for (const tId of tasksIds) {
+    await pocketbase.collection("tasks").update(tId, {
+      accepted: currentUserId,
+    });
+  }
+}
+
+export async function rejectTasks(tasksIds: string[]): Promise<void> {
+  const currentUserId = userStore.getState().user?.id ?? "";
+
+  for (const tId of tasksIds) {
+    await pocketbase.collection("tasks").update(tId, {
+      rejected: currentUserId,
+    });
+  }
 }
 
 function useTeams() {

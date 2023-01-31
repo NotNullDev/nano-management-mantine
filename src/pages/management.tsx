@@ -1,14 +1,20 @@
 import { showDebug } from "@/lib/debug";
+import { queryClient } from "@/lib/tanstackQuery";
 import { groupTasksByUser } from "@/logic/common/pure";
 import {
+  acceptTasks,
   managementPageStore,
+  MANAGEMENT_QUERY_KEYS,
+  rejectTasks,
   useManagementData,
 } from "@/logic/managementPageStore";
-import { Task } from "@/types/types";
+import { Task, Team } from "@/types/types";
 import { TasksGroupedByUser } from "@/types/utilTypes";
-import { Checkbox, ScrollArea, Select, Table } from "@mantine/core";
+import { Button, Checkbox, ScrollArea, Select, Table } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 import { IconCheck, IconFileExport, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
+import { useEffect, useState } from "react";
 
 export const ManagementPage = () => {
   useManagementData();
@@ -17,7 +23,15 @@ export const ManagementPage = () => {
       <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
         <h1 className="text-2xl font-bold mt-10 ml-5">Management</h1>
         <div className="flex w-full justify-end items-center gap-4">
-          <Checkbox label="hide empty" />
+          <Checkbox
+            label="hide empty"
+            onChange={(e) => {
+              const { checked } = e.target;
+              managementPageStore.setState((state) => {
+                state.hideEmptyTeams = checked;
+              });
+            }}
+          />
           <TeamSelector />
         </div>
         <Summary />
@@ -32,6 +46,20 @@ export default ManagementPage;
 const TeamSelector = () => {
   const selectedTeam = managementPageStore((state) => state.selectedTeam);
   const availableTeams = managementPageStore((state) => state.teams);
+  const hideEmpty = managementPageStore((state) => state.hideEmptyTeams);
+  const [date, setData] = useState<Team[]>([]);
+
+  useEffect(() => {
+    if (hideEmpty) {
+      const filtered = availableTeams.filter((team) => {
+        // remove teams which members have no tasks
+        // TODO
+      });
+      setData(filtered);
+    } else {
+      setData(availableTeams);
+    }
+  }, [selectedTeam, availableTeams, hideEmpty]);
 
   return (
     <>
@@ -67,18 +95,7 @@ function Summary() {
 
   return (
     <>
-      <div className="flex flex-col">
-        <div>
-          Found <span>{tasks.length} tasks.</span>
-        </div>
-        <div>
-          Found <span>{users.length} users.</span>
-        </div>
-        <div>
-          You have {tasks.length} tasks to verify created by {users.length}{" "}
-          users.
-        </div>
-      </div>
+      <div className="flex flex-col"></div>
     </>
   );
 }
@@ -93,6 +110,21 @@ function Tasks() {
         {groupTasksByUser(tasks, users).map((grouped) => {
           return <TaskGroup taskGroup={grouped} key={grouped.user.id} />;
         })}
+        {groupTasksByUser(tasks, users).length === 0 && (
+          <div className="flex flex-col items-center gap-2">
+            <h2 className="text-2xl">No tasks to manage</h2>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                await queryClient.invalidateQueries([
+                  MANAGEMENT_QUERY_KEYS.TASKS,
+                ]);
+              }}
+            >
+              Refresh
+            </Button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -143,17 +175,43 @@ function TaskGroup({ taskGroup }: { taskGroup: TasksGroupedByUser }) {
           </tbody>
         </Table>
         <div className="flex justify-between w-full mt-4">
-          <div>
-            <IconFileExport />
+          <div className="flex gap-10 items-center">
+            <Button className="hover:bg-violet-800 bg-violet-900">
+              Details
+            </Button>
+            <IconFileExport
+              className="hover:scale-105 hover:cursor-pointer"
+              size={28}
+            />
           </div>
           <div className="flex gap-6">
             <IconX
               className="hover:text-red-500 hover:cursor-pointer text-red-900"
               size={28}
+              onClick={async () => {
+                await rejectTasks(taskGroup.tasks.map((t) => t.id ?? ""));
+                await queryClient.invalidateQueries([
+                  MANAGEMENT_QUERY_KEYS.TASKS,
+                ]);
+                showNotification({
+                  title: "Tasks updated",
+                  message: "Tasks have been rejected",
+                });
+              }}
             />
             <IconCheck
               className="hover:text-green-500 hover:cursor-pointer text-green-900"
               size={28}
+              onClick={async () => {
+                await acceptTasks(taskGroup.tasks.map((t) => t.id ?? ""));
+                await queryClient.invalidateQueries([
+                  MANAGEMENT_QUERY_KEYS.TASKS,
+                ]);
+                showNotification({
+                  title: "Tasks updated",
+                  message: "Tasks have been accepted",
+                });
+              }}
             />
           </div>
         </div>

@@ -10,7 +10,7 @@ export function groupTasksByUser(
   sort: "asc" | "desc" = "desc",
   reduceSameDays: boolean = true
 ): TasksGroupedByUser[] {
-  const groupedTasks: TasksGroupedByUser[] = [];
+  let groupedTasks: TasksGroupedByUser[] = [];
 
   users.forEach((user) => {
     const tasksByUser = tasks.filter((task) => task.user === user.id);
@@ -46,6 +46,8 @@ export function groupTasksByUser(
 
     return u;
   });
+
+  groupedTasks = groupedTasks.filter((u) => u.tasks.length > 0);
 
   return groupedTasks;
 }
