@@ -12,6 +12,8 @@ export const TeamSchema = z.object({
   name: string().min(1).max(255),
   project: string(),
   tags: z.string().array(),
+  members: z.string().array(),
+  managers: z.string().array(),
 });
 
 export const ProjectSchema = z.object({
@@ -43,11 +45,11 @@ export const UserRoleSchema = z.object({
 export const UserSchema = z.object({
   id: string().optional(),
   username: string().min(1).max(255),
-  email: string().email(),
+  email: string().email().optional(),
   name: string().min(1).max(255),
-  avatar: string().min(1).max(255),
-  roles: z.array(UserRoleSchema),
-  teams: z.array(TeamSchema),
+  avatar: string().min(0).max(255),
+  roles: z.array(string()),
+  webSettings: z.string().nullable(),
 });
 
 export const TaskSchema = z.object({

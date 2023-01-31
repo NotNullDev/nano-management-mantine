@@ -498,9 +498,11 @@ export function getAvailableActivityFromName(
 }
 
 function updateAvailableActivities(selectedTeamId: string) {
-  const availableActivities = taskManagementPageStore
-    .getState()
-    .activities.filter((activity) => activity.team === selectedTeamId);
+  const activities = taskManagementPageStore.getState().activities;
+
+  const availableActivities = activities.filter(
+    (a) => a.team == selectedTeamId
+  );
 
   taskManagementPageStore.setState((state) => {
     state.availableActivities = availableActivities;

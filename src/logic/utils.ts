@@ -11,4 +11,12 @@ export class NanoUtils {
 
     return `${hours}h ${minutesLeft}m`;
   }
+
+  static joinAndFilters(filters: string[]): string {
+    return filters.join(" && ");
+  }
+
+  static joinOrFilters(filters: string[]): string {
+    return filters.join(" || ");
+  }
 }

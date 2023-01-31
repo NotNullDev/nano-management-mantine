@@ -6,6 +6,7 @@ import { NotificationsProvider } from "@mantine/notifications";
 import {
   IconHome,
   IconSettings,
+  IconSpiral,
   IconTimeline,
   IconUsers,
 } from "@tabler/icons-react";
@@ -142,6 +143,11 @@ const Links = [
     name: "/",
     path: "/tasks",
     icon: <IconTimeline />,
+  },
+  {
+    name: "/management",
+    path: "/management",
+    icon: <IconSpiral />,
   },
   {
     name: "/teams",
