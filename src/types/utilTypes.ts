@@ -1,4 +1,4 @@
-import { Activity, Project, Team } from "./types";
+import { Activity, Project, Task, Team, User } from "./types";
 
 export type MantineSelectedActivityType = {
   value: Activity;
@@ -19,3 +19,8 @@ export type MantineSelectedTeamType = {
 };
 
 export type NanoSortType = "asc" | "desc";
+
+export type TasksGroupedByUser = {
+  user: User;
+  tasks: Task[];
+};

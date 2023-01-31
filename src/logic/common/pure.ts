@@ -1,4 +1,67 @@
+import { Task, User } from "@/types/types";
+import { TasksGroupedByUser } from "@/types/utilTypes";
+import dayjs from "dayjs";
+
 export {};
+
+export function groupTasksByUser(
+  tasks: Task[],
+  users: User[],
+  sort: "asc" | "desc" = "desc",
+  reduceSameDays: boolean = true
+): TasksGroupedByUser[] {
+  const groupedTasks: TasksGroupedByUser[] = [];
+
+  users.forEach((user) => {
+    const tasksByUser = tasks.filter((task) => task.user === user.id);
+
+    groupedTasks.push({
+      user,
+      tasks: tasksByUser,
+    });
+  });
+
+  groupedTasks.map((u) => {
+    u.tasks = sortTasks(u.tasks, sort);
+
+    // reduceSameDays
+    let reducedTasks: Task[] = [];
+    let lastDate: string | undefined = undefined;
+
+    u.tasks.forEach((task) => {
+      if (!lastDate || !dayjs(lastDate).isSame(task.date, "day")) {
+        reducedTasks.push({ ...task });
+      } else {
+        let lastTask = reducedTasks[reducedTasks.length - 1];
+        reducedTasks[reducedTasks.length - 1] = {
+          ...lastTask,
+          duration: lastTask.duration + task.duration,
+        };
+      }
+
+      lastDate = task.date;
+    });
+
+    u.tasks = reducedTasks;
+
+    return u;
+  });
+
+  return groupedTasks;
+}
+
+export function sortTasks(tasks: Task[], sort: "asc" | "desc" = "desc") {
+  return tasks.sort((a, b) => {
+    const aDate = new Date(a.date);
+    const bDate = new Date(b.date);
+
+    if (sort === "asc") {
+      return bDate.getTime() - aDate.getTime();
+    }
+
+    return aDate.getTime() - bDate.getTime();
+  });
+}
 
 // import { Activity, Organization, Project, Task } from "@/types/types";
 
