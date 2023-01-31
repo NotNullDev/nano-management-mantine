@@ -12,7 +12,7 @@ import {
   Team,
   TeamSchema,
 } from "@/types/types";
-import { MantineSelectedActivityType } from "@/types/utilTypes";
+import { MantineSelectedActivityType, NanoSortType } from "@/types/utilTypes";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { create } from "zustand";
@@ -29,6 +29,14 @@ export class TaskUtils {
       .toString();
 
     return formattedDate;
+  }
+
+  static getNanoSortTypeAsString(type: NanoSortType): string {
+    if (type === "asc") {
+      return "+";
+    }
+
+    return "-";
   }
 
   static getCurrentMonthDateRange(): [Date, Date] {
@@ -90,6 +98,8 @@ export type TaskManagementPageStoreType = {
   selectedComment: string;
   selectedDate: Date;
   selectedDuration: number;
+  selectedTasksSortType: NanoSortType;
+  selectedRejectedOnly: boolean;
   activeDateRange: [Date, Date];
   // side effects
   availableTeams: Team[]; // based on selected project
@@ -99,7 +109,6 @@ export type TaskManagementPageStoreType = {
 
 export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
   subscribeWithSelector(
-    // @ts-ignore TODO: fix this
     immer((_set, _get, _store) => {
       return {
         // server data
@@ -113,10 +122,13 @@ export const taskManagementPageStore = create<TaskManagementPageStoreType>()(
         selectedProject: null,
         selectedTeam: null,
         selectedComment: "",
-        // 2022-06-25 11:03:50.052
         selectedDate: new Date(),
         selectedDuration: 8.0,
         activeDateRange: TaskUtils.getCurrentMonthDateRange(),
+        selectedTasksSortType: "desc",
+        selectedActivity: null,
+        selectedRejectedOnly: false,
+
         // side effects
         availableTeams: [] as Team[], // based on selected project
         availableActivities: [] as Activity[], // based on selected team
@@ -228,10 +240,17 @@ export async function fetchTasks() {
 export async function fetchTasksWhereTeamAndDateBetween(
   teamId: string,
   dateStart: string,
-  dateEnd: string
+  dateEnd: string,
+  sort: NanoSortType,
+  rejectedOnly: boolean
 ) {
+  const sortSign = TaskUtils.getNanoSortTypeAsString(sort);
+
+  const rejectedFilter = rejectedOnly ? " && rejected != ''" : "";
+
   const tasks = await pocketbase.collection("tasks").getFullList(undefined, {
-    filter: `team.id = '${teamId}' && date >= "${dateStart}" && date <= "${dateEnd}"`,
+    filter: `team.id = '${teamId}' && accepted = '' && date >= "${dateStart}" && date <= "${dateEnd}" ${rejectedFilter}`,
+    sort: `${sortSign}date`,
   });
 
   const validData = tasks.map((d) => TaskSchema.parse(d));
@@ -294,14 +313,29 @@ export function useTasks() {
 
   const formattedDateStart = TaskUtils.formatDate(dateStart);
   const formattedDateEnd = TaskUtils.formatDate(dateEnd);
+  const selectedTasksSortType = taskManagementPageStore(
+    (state) => state.selectedTasksSortType
+  );
+  const selectedRejectedOnly = taskManagementPageStore(
+    (state) => state.selectedRejectedOnly
+  );
 
   const query = useQuery(
-    [TASKS_QUERY_KEYS.TASKS, selectedTeam?.id, dateStart, dateEnd],
+    [
+      TASKS_QUERY_KEYS.TASKS,
+      selectedTeam?.id,
+      dateStart,
+      dateEnd,
+      selectedTasksSortType,
+      selectedRejectedOnly,
+    ],
     async () => {
       return fetchTasksWhereTeamAndDateBetween(
         selectedTeam?.id ?? "---",
         formattedDateStart,
-        formattedDateEnd
+        formattedDateEnd,
+        selectedTasksSortType,
+        selectedRejectedOnly
       );
     },
     {

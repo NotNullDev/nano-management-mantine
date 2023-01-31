@@ -17,3 +17,5 @@ export type MantineSelectedTeamType = {
   label: string;
   group: string;
 };
+
+export type NanoSortType = "asc" | "desc";

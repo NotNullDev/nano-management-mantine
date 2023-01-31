@@ -16,6 +16,7 @@ import { Task as SingleTask, TaskOptional, TaskSchema } from "@/types/types";
 import {
   Box,
   Button,
+  Checkbox,
   Divider,
   NumberInput,
   Overlay,
@@ -28,6 +29,7 @@ import { DatePicker, DateRangePicker } from "@mantine/dates";
 import { showNotification } from "@mantine/notifications";
 import {
   IconArrowDown,
+  IconArrowUp,
   IconCalendar,
   IconCheck,
   IconPlus,
@@ -152,16 +154,63 @@ const TasksArea = () => {
       <EditableTask />
       <Divider className="my-4" />
       <div className="flex w-full justify-between">
-        <h2 className="text-2xl mb-4">Previous tasks (not accepted)</h2>
-        <div className="flex gap-3">
-          <Button color="violet" leftIcon={<IconArrowDown />}>
-            Time descending
-          </Button>
-        </div>
+        <h2 className="text-2xl mb-4">
+          Previous tasks (not accepted by manager yet)
+        </h2>
+        <ExistingTasksFilteButtons />
       </div>
       {tasks.map((task) => {
         return <SingleTask key={task.id} task={task} />;
       })}
+    </div>
+  );
+};
+
+const ExistingTasksFilteButtons = () => {
+  const sort = taskManagementPageStore((state) => state.selectedTasksSortType);
+
+  return (
+    <div className="flex gap-6 items-center">
+      <Checkbox
+        size="md"
+        label="Rejected only"
+        color="violet"
+        onChange={(e) => {
+          const rejectedOnly = e.currentTarget.checked ?? false;
+
+          taskManagementPageStore.setState((state) => {
+            state.selectedRejectedOnly = rejectedOnly;
+          });
+        }}
+      />
+      <div className="flex gap-3">
+        {sort === "desc" && (
+          <Button
+            className="bg-violet-900 hover:bg-violet-800"
+            onClick={() => {
+              taskManagementPageStore.setState((state) => {
+                state.selectedTasksSortType = "asc";
+              });
+            }}
+            leftIcon={<IconArrowDown />}
+          >
+            Time descending
+          </Button>
+        )}
+        {sort === "asc" && (
+          <Button
+            className="bg-violet-900 hover:bg-violet-800"
+            onClick={() => {
+              taskManagementPageStore.setState((state) => {
+                state.selectedTasksSortType = "desc";
+              });
+            }}
+            leftIcon={<IconArrowUp />}
+          >
+            Time ascending
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
