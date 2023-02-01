@@ -1,3 +1,4 @@
+import { indexPageStore, useIndexData } from "@/logic/indexPageStore";
 import {
   authenticateAdmin,
   authenticateUser,
@@ -12,6 +13,7 @@ import { useEffect, useState } from "react";
 const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
+  useIndexData();
   return (
     <>
       <Head>
@@ -35,6 +37,7 @@ export default function Home() {
 const UserStatsComponent = () => {
   const [user, setUser] = useState<Admin | Record | null>(null);
   const authUser = userStore((state) => state.user);
+  const dashboardSummary = indexPageStore((state) => state.summary);
 
   useEffect(() => {
     setUser(authUser);
@@ -46,6 +49,16 @@ const UserStatsComponent = () => {
         <div className="text-3xl">
           <span className="text-green-700">Welcome back</span>
           <span className="font-bold ml-3 text-indigo-600">{user.email}</span>
+        </div>
+        <div className="mt-5">
+          <div>
+            Of the{" "}
+            <span>
+              {dashboardSummary?.totalTasks} tasks,{" "}
+              {dashboardSummary?.acceptedTasks} are accepted and{" "}
+              {dashboardSummary?.rejectedTasks} are rejected
+            </span>
+          </div>
         </div>
       </>
     );

@@ -62,6 +62,12 @@ export const TaskSchema = z.object({
   team: string(),
 });
 
+export const DashboardSummarySchema = z.object({
+  totalTasks: z.number(),
+  acceptedTasks: z.number(),
+  rejectedTasks: z.number(),
+});
+
 // inferred types
 
 export type Tag = z.infer<typeof TagSchema>;
@@ -80,6 +86,8 @@ export type User = z.infer<typeof UserSchema>;
 
 export type Task = z.infer<typeof TaskSchema>;
 
+export type DashboardSummary = z.infer<typeof DashboardSummarySchema>;
+
 // optional types
 
 export type TagOptional = Partial<Tag>;
@@ -97,3 +105,5 @@ export type UserRoleOptional = Partial<UserRole>;
 export type UserOptional = Partial<User>;
 
 export type TaskOptional = Partial<Task>;
+
+export type DashboardSummaryOptional = Partial<DashboardSummary>;
