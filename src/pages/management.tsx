@@ -8,9 +8,9 @@ import {
   rejectTasks,
   useManagementData,
 } from "@/logic/managementPageStore";
-import { Task, Team } from "@/types/types";
+import { Task } from "@/types/types";
 import { TasksGroupedByUser } from "@/types/utilTypes";
-import { Button, Checkbox, ScrollArea, Select, Table } from "@mantine/core";
+import { Button, ScrollArea, Select, Table } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
 import { IconCheck, IconFileExport, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
@@ -23,15 +23,6 @@ export const ManagementPage = () => {
       <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
         <h1 className="text-2xl font-bold mt-10 ml-5">Management</h1>
         <div className="flex w-full justify-end items-center gap-4">
-          <Checkbox
-            label="hide empty"
-            onChange={(e) => {
-              const { checked } = e.target;
-              managementPageStore.setState((state) => {
-                state.hideEmptyTeams = checked;
-              });
-            }}
-          />
           <TeamSelector />
         </div>
         <Summary />
@@ -46,20 +37,25 @@ export default ManagementPage;
 const TeamSelector = () => {
   const selectedTeam = managementPageStore((state) => state.selectedTeam);
   const availableTeams = managementPageStore((state) => state.teams);
-  const hideEmpty = managementPageStore((state) => state.hideEmptyTeams);
-  const [date, setData] = useState<Team[]>([]);
+  const showAll = managementPageStore((state) => state.showAllTeams);
+  const [data, setData] = useState<string[]>([]);
+  const [val, setVal] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    if (hideEmpty) {
-      const filtered = availableTeams.filter((team) => {
-        // remove teams which members have no tasks
-        // TODO
-      });
-      setData(filtered);
-    } else {
-      setData(availableTeams);
+    let teamsNames = availableTeams.map((team) => team.name);
+    teamsNames = ["All", ...teamsNames];
+
+    setData(teamsNames);
+
+    if (showAll) {
+      setVal("All");
+      return;
     }
-  }, [selectedTeam, availableTeams, hideEmpty]);
+
+    if (selectedTeam) {
+      setVal(selectedTeam.name);
+    }
+  }, [selectedTeam, availableTeams, showAll]);
 
   return (
     <>
@@ -68,9 +64,17 @@ const TeamSelector = () => {
         placeholder="Pick one"
         searchable
         nothingFound="No options"
-        value={selectedTeam?.name}
-        data={availableTeams.map((team) => team.name)}
+        value={val}
+        data={data}
         onChange={(value) => {
+          if (value === "All") {
+            managementPageStore.setState((state) => {
+              state.selectedTeam = null;
+              state.showAllTeams = true;
+            });
+            return;
+          }
+
           const t = availableTeams.find((team) => team.name === value);
 
           if (!t) {
@@ -82,6 +86,7 @@ const TeamSelector = () => {
 
           managementPageStore.setState((state) => {
             state.selectedTeam = t;
+            state.showAllTeams = false;
           });
         }}
       />
@@ -103,14 +108,21 @@ function Summary() {
 function Tasks() {
   const tasks = managementPageStore((state) => state.tasks);
   const users = managementPageStore((state) => state.users);
+  const showAll = managementPageStore((state) => state.showAllTeams);
+  const [groupedTasks, setGroupedTasks] = useState<TasksGroupedByUser[]>([]);
+
+  useEffect(() => {
+    const groupedTasks = groupTasksByUser(tasks, users);
+    setGroupedTasks(groupedTasks);
+  }, [tasks, users, showAll]);
 
   return (
     <>
       <div key={tasks.length} className="flex flex-col gap-6 p-4 items-center">
-        {groupTasksByUser(tasks, users).map((grouped) => {
+        {groupedTasks.map((grouped) => {
           return <TaskGroup taskGroup={grouped} key={grouped.user.id} />;
         })}
-        {groupTasksByUser(tasks, users).length === 0 && (
+        {groupedTasks.length === 0 && (
           <div className="flex flex-col items-center gap-2">
             <h2 className="text-2xl">No tasks to manage</h2>
             <Button

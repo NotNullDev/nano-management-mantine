@@ -28,7 +28,7 @@ export type ManagementPageStore = {
   users: User[];
   selectedProject: Project | null;
   selectedTeam: Team | null;
-  hideEmptyTeams: boolean;
+  showAllTeams: boolean;
 };
 
 export const managementPageStore = create<ManagementPageStore>()(
@@ -39,7 +39,7 @@ export const managementPageStore = create<ManagementPageStore>()(
       users: [],
       selectedProject: null,
       selectedTeam: null,
-      hideEmptyTeams: false,
+      showAllTeams: false,
     };
   })
 );
@@ -56,12 +56,15 @@ async function fetchTeams(): Promise<Team[]> {
   return validatedTeams;
 }
 
-async function fetchTasks(teamId: string): Promise<Task[]> {
+async function fetchTasks(
+  teamId: string | undefined,
+  showAll: boolean
+): Promise<Task[]> {
   const currentUserId = userStore.getState().user?.id ?? "";
 
   const filters: string[] = [];
 
-  if (teamId && teamId !== "") {
+  if (teamId && teamId !== "" && !showAll) {
     filters.push(`team.id = '${teamId}'`);
   }
 
@@ -80,10 +83,15 @@ async function fetchTasks(teamId: string): Promise<Task[]> {
   return validatedTeams;
 }
 
-async function fetchUsers(userIds: string[]): Promise<User[]> {
-  const queries = userIds.map((id) => `id = '${id}'`);
-
-  const filters = NanoUtils.joinOrFilters(queries);
+async function fetchUsers(
+  userIds: string[],
+  fetchAll: boolean
+): Promise<User[]> {
+  let filters = "";
+  if (!fetchAll) {
+    const queries = userIds.map((id) => `id = '${id}'`);
+    filters = NanoUtils.joinOrFilters(queries);
+  }
 
   const users = await pocketbase.collection("users").getFullList(undefined, {
     filter: filters,
@@ -126,14 +134,15 @@ function useTeams() {
 
 function useTasks() {
   const selectedTeamId = managementPageStore((state) => state.selectedTeam?.id);
+  const showAllTeams = managementPageStore((state) => state.showAllTeams);
   useQuery(
-    [MANAGEMENT_QUERY_KEYS.TASKS, selectedTeamId],
+    [MANAGEMENT_QUERY_KEYS.TASKS, selectedTeamId, showAllTeams],
     () => {
-      if (!selectedTeamId) {
+      if (!selectedTeamId && !showAllTeams) {
         return [];
       }
 
-      return fetchTasks(selectedTeamId);
+      return fetchTasks(selectedTeamId, showAllTeams);
     },
     {
       onSuccess: (tasks) => {
@@ -147,15 +156,16 @@ function useTasks() {
 
 function useUsers() {
   const selectedTeam = managementPageStore((state) => state.selectedTeam);
+  const fetchAll = managementPageStore((state) => state.showAllTeams);
 
   useQuery(
-    [MANAGEMENT_QUERY_KEYS.USERS, selectedTeam],
+    [MANAGEMENT_QUERY_KEYS.USERS, selectedTeam, fetchAll],
     () => {
-      if (!selectedTeam?.id) {
+      if (!selectedTeam?.id && !fetchAll) {
         return [];
       }
 
-      return fetchUsers(selectedTeam.members);
+      return fetchUsers(selectedTeam?.members ?? [], fetchAll);
     },
     {
       onSuccess: (users) => {

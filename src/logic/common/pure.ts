@@ -21,6 +21,8 @@ export function groupTasksByUser(
     });
   });
 
+  console.log("groupedTasks", groupedTasks);
+
   groupedTasks.map((u) => {
     u.tasks = sortTasks(u.tasks, sort);
 
@@ -41,6 +43,8 @@ export function groupTasksByUser(
 
       lastDate = task.date;
     });
+
+    console.log("reducedTasks", reducedTasks);
 
     u.tasks = reducedTasks;
 
