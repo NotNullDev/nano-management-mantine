@@ -63,9 +63,9 @@ export const TaskSchema = z.object({
 });
 
 export const DashboardSummarySchema = z.object({
-  totalTasks: z.number(),
-  acceptedTasks: z.number(),
-  rejectedTasks: z.number(),
+  teamName: z.string(),
+  tasksSum: z.number(),
+  date: z.string(),
 });
 
 // inferred types

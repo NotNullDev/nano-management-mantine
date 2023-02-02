@@ -24,3 +24,11 @@ export type TasksGroupedByUser = {
   user: User;
   tasks: Task[];
 };
+
+export type GroupedSummary = {
+  teamName: string;
+  months: {
+    date: string;
+    tasksSum: number;
+  }[];
+};

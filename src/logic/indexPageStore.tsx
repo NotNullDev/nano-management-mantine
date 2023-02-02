@@ -11,23 +11,23 @@ export class INDEX_QUERY_KEYS {
 }
 
 export type IndexPageStoreType = {
-  summary: DashboardSummary | null;
+  summary: DashboardSummary[];
 };
 
 export const indexPageStore = create<IndexPageStoreType>()(
   immer((set, get, store) => {
     return {
-      summary: null,
+      summary: [],
     };
   })
 );
 
 const fetchDashboardSummary = async () => {
-  const resp = await pocketbase.send("/dashboard-summary", {
+  const resp = await pocketbase.send("/test", {
     method: "GET",
   });
 
-  const validatedData = DashboardSummarySchema.parse(resp);
+  const validatedData = resp.map((r: any) => DashboardSummarySchema.parse(r));
 
   return validatedData;
 };
