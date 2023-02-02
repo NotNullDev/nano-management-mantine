@@ -221,6 +221,7 @@ const EditableTask = () => {
 
     useEffect(() => {
         if (!selectedTeam) return;
+        // test
         setTask((old) => ({...old, team: selectedTeam.id}));
     }, [selectedTeam]);
 
