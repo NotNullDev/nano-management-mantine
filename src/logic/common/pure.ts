@@ -1,5 +1,5 @@
-import { Task, User } from "@/types/types";
-import { TasksGroupedByUser } from "@/types/utilTypes";
+import { DashboardSummary, Task, User } from "@/types/types";
+import { GroupedSummary, TasksGroupedByUser } from "@/types/utilTypes";
 import dayjs from "dayjs";
 
 export {};
@@ -67,6 +67,52 @@ export function sortTasks(tasks: Task[], sort: "asc" | "desc" = "desc") {
 
     return aDate.getTime() - bDate.getTime();
   });
+}
+
+// sample data for two months:
+// [ { start: 01.01.2022, end: 31.01.2022 }, { start: 01.02.2022, end: 28.02.2022 } ]
+export function getNextXMonthsDateRanges(refData: Date, months: number) {
+  const dateRanges: { start: Date; end: Date }[] = [];
+
+  for (let i = 0; i < months; i++) {
+    const start = dayjs(refData).add(i, "month").startOf("month").toDate();
+    const end = dayjs(refData).add(i, "month").endOf("month").toDate();
+
+    dateRanges.push({ start, end });
+  }
+
+  return dateRanges;
+}
+
+export function groupDashboardSummaryByDate(
+  summaries: DashboardSummary[]
+): GroupedSummary[] {
+  let groupedSummaries: GroupedSummary[] = [];
+
+  summaries.forEach((summary) => {
+    const foundGroup = groupedSummaries.find(
+      (group) => group.teamName === summary.teamName
+    );
+
+    if (foundGroup) {
+      foundGroup.months.push({
+        date: summary.date,
+        tasksSum: summary.tasksSum,
+      });
+    } else {
+      groupedSummaries.push({
+        teamName: summary.teamName,
+        months: [
+          {
+            date: summary.date,
+            tasksSum: summary.tasksSum,
+          },
+        ],
+      });
+    }
+  });
+
+  return groupedSummaries;
 }
 
 // import { Activity, Organization, Project, Task } from "@/types/types";

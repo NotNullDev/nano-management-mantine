@@ -3,11 +3,10 @@ import { queryClient } from "@/lib/tanstackQuery";
 import { groupTasksByUser } from "@/logic/common/pure";
 import {
   acceptTasks,
-  managementPageStore,
   MANAGEMENT_QUERY_KEYS,
   rejectTasks,
   useManagementData,
-} from "@/logic/managementPageStore";
+} from "@/logic/managementPage/api";
 import { Task } from "@/types/types";
 import { TasksGroupedByUser } from "@/types/utilTypes";
 import { Button, ScrollArea, Select, Table } from "@mantine/core";
@@ -15,6 +14,7 @@ import { showNotification } from "@mantine/notifications";
 import { IconCheck, IconFileExport, IconX } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import {managementPageStore} from "@/logic/managementPage/managementPageStore";
 
 export const ManagementPage = () => {
   useManagementData();

@@ -1,6 +1,6 @@
 import { initLibraries } from "@/lib/common";
 import { queryClient } from "@/lib/tanstackQuery";
-import { logoutUser } from "@/logic/userStore";
+import { logoutUser } from "@/logic/common/userStore";
 import { MantineProvider, Menu } from "@mantine/core";
 import { NotificationsProvider } from "@mantine/notifications";
 import {
@@ -37,8 +37,8 @@ export default function App(props: AppProps) {
       <QueryClientProvider client={queryClient}>
         <MantineProvider
           withGlobalStyles
-          withCSSVariables
-          withNormalizeCSS
+          // withCSSVariables
+          // withNormalizeCSS
           theme={{
             /** Put your mantine theme override here */
             colorScheme: "dark",
