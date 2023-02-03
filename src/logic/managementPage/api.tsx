@@ -4,6 +4,7 @@ import {pocketbase} from "@/lib/pocketbase";
 import {NanoUtils} from "@/logic/common/utils";
 import {useQuery} from "@tanstack/react-query";
 import {managementPageStore} from "@/logic/managementPage/managementPageStore";
+import {showDebug} from "@/lib/debug";
 
 async function fetchTeams(): Promise<Team[]> {
     const currentUserId = userStore.getState().user?.id ?? "";

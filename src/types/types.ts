@@ -60,6 +60,8 @@ export const TaskSchema = z.object({
   date: string().min(1).max(255),
   user: string(),
   team: string(),
+  rejected: string(),
+  accepted: string()
 });
 
 export const DashboardSummarySchema = z.object({

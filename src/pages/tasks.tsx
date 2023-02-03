@@ -2,7 +2,7 @@ import {showDebug} from "@/lib/debug";
 import {pocketbase} from "@/lib/pocketbase";
 import {queryClient} from "@/lib/tanstackQuery";
 import {TaskUtils,} from "@/logic/tasksPage/tasksUtils";
-import {Task as SingleTask, TaskOptional, TaskSchema} from "@/types/types";
+import {Task, Task as SingleTask, TaskOptional, TaskSchema} from "@/types/types";
 import {
     Box,
     Button,
@@ -17,7 +17,16 @@ import {
 } from "@mantine/core";
 import {DatePicker, DateRangePicker} from "@mantine/dates";
 import {showNotification} from "@mantine/notifications";
-import {IconArrowDown, IconArrowUp, IconCalendar, IconCheck, IconPlus, IconReload,} from "@tabler/icons-react";
+import {
+    IconArrowDown,
+    IconArrowUp,
+    IconCalendar,
+    IconCheck,
+    IconPlus,
+    IconQuestionMark,
+    IconReload,
+    IconX
+} from "@tabler/icons-react";
 import React, {useEffect, useState} from "react";
 import {ZodError} from "zod";
 import {tasksPageStore} from "@/logic/tasksPage/taskpageStore";
@@ -144,17 +153,17 @@ const TasksArea = () => {
                 </h2>
             </div>
             <div className="flex justify-between w-full my-2 mb-6">
-               <div className="flex gap-4 items-end">
-                   <TasksRangeDatePicker/>
-                   <IconReload
-                       onClick={() => {
-                           tasksPageStore.setState((state) => {
-                               state.activeDateRange = TaskUtils.getCurrentMonthDateRange();
-                           });
-                       }}
-                       className="cursor-pointer active:rotate-[359deg] transition-all mb-2"
-                   />
-               </div>
+                <div className="flex gap-4 items-end">
+                    <TasksRangeDatePicker/>
+                    <IconReload
+                        onClick={() => {
+                            tasksPageStore.setState((state) => {
+                                state.activeDateRange = TaskUtils.getCurrentMonthDateRange();
+                            });
+                        }}
+                        className="cursor-pointer active:rotate-[359deg] transition-all mb-2"
+                    />
+                </div>
                 <ExistingTasksFilteButtons/>
             </div>
             {tasks.map((task) => {
@@ -229,7 +238,7 @@ const EditableTask = () => {
 };
 
 const TasksRangeDatePicker = () => {
-    const [value, setValue] = React.useState<[Date, Date]>(
+    const [value, setValue] = React.useState<[Date, Date] | undefined>(
         TaskUtils.getCurrentMonthDateRange()
     );
 
@@ -238,7 +247,6 @@ const TasksRangeDatePicker = () => {
     );
 
     useEffect(() => {
-        if (!activeDateRange) return;
         setValue(activeDateRange);
         queryClient.invalidateQueries([TASKS_QUERY_KEYS.TASKS]);
     }, [activeDateRange]);
@@ -251,20 +259,24 @@ const TasksRangeDatePicker = () => {
             label="Date range"
             className="w-[350px]"
             value={value}
+            clearable={true}
+            clearButtonLabel="clear"
             onChange={(val) => {
                 if (!val || val.length !== 2 || !val[0] || !val[1]) {
-                    return null;
-                };
+                    tasksPageStore.setState((state) => {
+                        state.activeDateRange = undefined;
+                    });
+                    showDebug({
+                        message: `hi`
+                    });
+                    return;
+                }
+                ;
+
                 const [from, to] = val;
 
                 tasksPageStore.setState((state) => {
                     state.activeDateRange = [from, to];
-                });
-
-                showDebug({
-                    message: `${TaskUtils.formatDate(from)} - ${TaskUtils.formatDate(
-                        to
-                    )}`,
                 });
             }}
         />
@@ -310,6 +322,8 @@ const SingleTask = ({task}: { task: TaskOptional }) => {
                 </Tooltip>
             )}
             <div className="flex gap-4 ">
+                <TaskStatusIcon task={workTask} />
+
                 <ActivitySelector task={workTask} updateTask={updateTask}/>
 
                 <TaskDurationSelector task={workTask} updateTask={updateTask}/>
@@ -323,6 +337,41 @@ const SingleTask = ({task}: { task: TaskOptional }) => {
         </Box>
     );
 };
+
+type TaskStatusIconProps = {
+    task: TaskOptional
+}
+
+function TaskStatusIcon({task} : TaskStatusIconProps) {
+
+    return (
+        <div className="flex justify-center items-center min-h-full">
+            {
+                task.accepted !== "" &&
+                task.rejected === "" &&
+                <Tooltip label={"Task accept"} >
+                    <IconCheck className=""/>
+                </Tooltip>
+            }
+
+            {
+                task.rejected !== "" &&
+                task.accepted === "" &&
+                <Tooltip label={"Task rejected (to be corrected)"}>
+                    <IconX/>
+                </Tooltip>
+            }
+
+            {
+                task.rejected === "" &&
+                task.accepted === "" &&
+                <Tooltip label={"New task (to be reviewed by manager)"}>
+                    <IconQuestionMark/>
+                </Tooltip>
+            }
+        </div>
+    )
+}
 
 const NewTaskControlButton = ({
                                   task,

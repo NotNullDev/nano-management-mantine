@@ -24,7 +24,7 @@ export type TasksPageStoreType = {
     selectedDuration: number;
     selectedTasksSortType: NanoSortType;
     selectedRejectedOnly: boolean;
-    activeDateRange: [Date, Date] | null;
+    activeDateRange: [Date, Date] | undefined;
     // side effects
     availableTeams: Team[]; // based on selected project
     availableActivities: Activity[]; // based on selected team

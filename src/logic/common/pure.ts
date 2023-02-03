@@ -21,8 +21,6 @@ export function groupTasksByUser(
     });
   });
 
-  console.log("groupedTasks", groupedTasks);
-
   groupedTasks.map((u) => {
     u.tasks = sortTasks(u.tasks, sort);
 
@@ -82,6 +80,46 @@ export function getNextXMonthsDateRanges(refData: Date, months: number) {
   }
 
   return dateRanges;
+}
+
+export function groupTasksByUser2(
+    tasks: Task[],
+    users: User[],
+    sort: "asc" | "desc" = "desc",
+    reduceSameDays: boolean = true
+) {
+  const result: TasksGroupedByUser[] = [];
+
+  for (const user of users) {
+    const currentUserTasks = tasks.filter(t => t.user === user.id)
+
+    if (sort === "asc") {
+      tasks = tasks.sort((a, b) => {return dayjs(a.date).diff(b.date)})
+    } else {
+      tasks = tasks.sort((a, b) => {return dayjs(b.date).diff(a.date)})
+    }
+
+    if (reduceSameDays) {
+      const days = [] as string[]
+
+      for (const task of tasks) {
+        const day = task.date;
+
+        const dayInArr = days.find(d => d === day);
+
+        if (!dayInArr) {
+
+        }
+
+      }
+    }
+
+    const tasksGroup = {
+      user: user,
+      tasks: currentUserTasks
+    } as TasksGroupedByUser
+  }
+
 }
 
 export function groupDashboardSummaryByDate(

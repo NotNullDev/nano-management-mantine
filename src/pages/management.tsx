@@ -201,13 +201,22 @@ function TaskGroup({ taskGroup }: { taskGroup: TasksGroupedByUser }) {
               className="hover:text-red-500 hover:cursor-pointer text-red-900"
               size={28}
               onClick={async () => {
-                await rejectTasks(taskGroup.tasks.map((t) => t.id ?? ""));
+                showNotification({
+                  title: "Tasks updated",
+                  message: "Tasks have been rejected" + taskGroup.tasks.length,
+                });
+
+                const tasksToReject = managementPageStore.getState().tasks
+                    .filter(t => t.user === taskGroup.user.id)
+                    .map(t => t.id ?? "")
+
+                await rejectTasks(tasksToReject);
                 await queryClient.invalidateQueries([
                   MANAGEMENT_QUERY_KEYS.TASKS,
                 ]);
                 showNotification({
                   title: "Tasks updated",
-                  message: "Tasks have been rejected",
+                  message: "Tasks have been rejected" + taskGroup.tasks.length,
                 });
               }}
             />
@@ -215,6 +224,13 @@ function TaskGroup({ taskGroup }: { taskGroup: TasksGroupedByUser }) {
               className="hover:text-green-500 hover:cursor-pointer text-green-900"
               size={28}
               onClick={async () => {
+
+                const tasksToAccept = managementPageStore.getState().tasks
+                    .filter(t => t.user === taskGroup.user.id)
+                    .map(t => t.id ?? "")
+
+                await rejectTasks(tasksToAccept);
+
                 await acceptTasks(taskGroup.tasks.map((t) => t.id ?? ""));
                 await queryClient.invalidateQueries([
                   MANAGEMENT_QUERY_KEYS.TASKS,
