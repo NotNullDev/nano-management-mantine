@@ -40,6 +40,7 @@ export async function fetchTasksWhereTeamAndDateBetween(
     dateStart?: string,
     dateEnd?: string,
 ) {
+
     const sortSign = TaskUtils.getNanoSortTypeAsString(sort);
 
     const teamFilter = `team.id = '${teamId}'`;
@@ -63,12 +64,12 @@ export async function fetchTasksWhereTeamAndDateBetween(
     );
 
 
-    const tasks = await pocketbase.collection("tasks").getFullList(undefined, {
+    const tasks = await pocketbase.collection("tasks").getList(1, 10, {
         filter: f,
-        sort: `${sortSign}date`,
+        sort: `${sortSign}date`
     });
 
-    const validData = tasks.map((d) => TaskSchema.parse(d));
+    const validData = tasks.items.map((d) => TaskSchema.parse(d));
 
     return validData;
 }
@@ -137,6 +138,10 @@ export function useTasks() {
         ],
         async () => {
 
+            tasksPageStore.setState(state => {
+                state.tasksLoading = true;
+            })
+
             let formattedDateStart: string | undefined = undefined;
             let formattedDateEnd: string | undefined = undefined;
 
@@ -157,8 +162,13 @@ export function useTasks() {
         {
             onSuccess: (data) => {
                 tasksPageStore.setState((state) => {
-                    state.tasks = data;
+                    state.tasks = data
                 });
+            },
+            onSettled: () => {
+                tasksPageStore.setState(state => {
+                    state.tasksLoading = false;
+                })
             },
             enabled: !!selectedTeam?.id,
         }

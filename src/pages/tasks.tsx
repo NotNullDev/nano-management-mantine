@@ -8,6 +8,7 @@ import {
     Button,
     Checkbox,
     Divider,
+    LoadingOverlay,
     NumberInput,
     Overlay,
     ScrollArea,
@@ -168,6 +169,7 @@ const TasksArea = () => {
                 <ExistingTasksFilteButtons/>
             </div>
             <TaskSearchInput/>
+            <div className="mb-2"></div>
             {tasks.map((task) => {
                 return <SingleTask key={task.id} task={task}/>;
             })}
@@ -324,7 +326,7 @@ const SingleTask = ({task}: { task: TaskOptional }) => {
 
     return (
         <Box
-            className="flex flex-1 p-4 shadow-xl justify-between items-center relative"
+            className="flex flex-1 p-4 shadow-xl justify-between items-center relative flex-wrap"
             key={selectedTeam?.id}
         >
             {(!selectedTeam || availableActivities.length === 0) && (
@@ -375,7 +377,7 @@ function TaskId({task}: TaskIdProps) {
     const clipboard = useClipboard();
 
     return (
-        <div className="flex justify-center items-center cursor-pointer min-h-full">
+        <div className="flex justify-end items-center cursor-pointer min-h-full">
             <Tooltip label={
                 clipboard.copied
                     ? "Copied"
@@ -403,7 +405,7 @@ function TaskStatusIcon({task}: TaskStatusIconProps) {
                 task.accepted !== "" &&
                 task.rejected === "" &&
                 <Tooltip label={"Task accept"}>
-                    <IconCheck className=""/>
+                    <IconCheck className="text-sky-900"/>
                 </Tooltip>
             }
 
@@ -433,6 +435,8 @@ const NewTaskControlButton = ({
     task: TaskOptional;
     updateTask: (newTask: TaskOptional) => void;
 }) => {
+    const loadingStatus = tasksPageStore(state => state.tasksLoading)
+
     return (
         <>
             <div>
@@ -444,9 +448,13 @@ const NewTaskControlButton = ({
                 )}
                 {/* add task */}
                 {task.id && (
-                    <Button size="xs" onClick={() => onUpdateTask(task)}>
-                        <IconCheck/>
-                    </Button>
+                    <div className="relative">
+                        <LoadingOverlay visible={loadingStatus} overlayBlur={1}
+                                        className="p-5 rounded-xl flex justify-center items-center"/>
+                        <Button size="xs" onClick={() => onUpdateTask(task)}>
+                            <IconCheck/>
+                        </Button>
+                    </div>
                 )}
             </div>
         </>

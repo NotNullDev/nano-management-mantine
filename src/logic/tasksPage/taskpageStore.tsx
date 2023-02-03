@@ -25,6 +25,7 @@ export type TasksPageStoreType = {
     selectedTasksSortType: NanoSortType;
     selectedRejectedOnly: boolean;
     activeDateRange: [Date, Date] | undefined;
+    tasksLoading: boolean;
     // side effects
     availableTeams: Team[]; // based on selected project
     availableActivities: Activity[]; // based on selected team
@@ -52,6 +53,7 @@ export const tasksPageStore = create<TasksPageStoreType>()(
                 selectedTasksSortType: "desc",
                 selectedActivity: null,
                 selectedRejectedOnly: false,
+                tasksLoading: false,
 
                 // side effects
                 availableTeams: [] as Team[], // based on selected project

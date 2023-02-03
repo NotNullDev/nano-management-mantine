@@ -22,10 +22,10 @@ export default function App(props: AppProps) {
   return (
     <div className="min-h-screen flex flex-col">
       <Head>
-        <title>Page title</title>
+        <title>Nano Management</title>
         <meta
-          name="viewport"
-          content="minimum-scale=1, initial-scale=1, width=device-width"
+            name="viewport"
+            content="minimum-scale=1, initial-scale=1, width=device-width"
         />
       </Head>
       <QueryClientProvider client={queryClient}>
