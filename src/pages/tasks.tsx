@@ -2,7 +2,7 @@ import {showDebug} from "@/lib/debug";
 import {pocketbase} from "@/lib/pocketbase";
 import {queryClient} from "@/lib/tanstackQuery";
 import {TaskUtils,} from "@/logic/tasksPage/tasksUtils";
-import {Task, Task as SingleTask, TaskOptional, TaskSchema} from "@/types/types";
+import {Task as SingleTask, TaskOptional, TaskSchema} from "@/types/types";
 import {
     Box,
     Button,
@@ -27,7 +27,7 @@ import {
     IconReload,
     IconX
 } from "@tabler/icons-react";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {ZodError} from "zod";
 import {tasksPageStore} from "@/logic/tasksPage/taskpageStore";
 import {TASKS_QUERY_KEYS, useTaskManagementData} from "@/logic/tasksPage/api";
@@ -39,6 +39,7 @@ import {
     getTeamFromName
 } from "@/logic/tasksPage/pure";
 import {getEmptyTaskOptional} from "@/logic/tasksPage/aa";
+import {useClipboard} from "@mantine/hooks";
 
 type TasksPageStoreType = {
     currentTask: TaskOptional;
@@ -143,12 +144,12 @@ const TasksArea = () => {
     const tasks = tasksPageStore((state) => state.tasks);
 
     return (
-        <div>
-            <h2 className="text-2xl mb-4">New task</h2>
+        <div className="px-4">
+            <h2 className="text-2xl mb-4 ">New task</h2>
             <EditableTask/>
             <Divider className="my-4"/>
             <div className="flex w-full justify-between">
-                <h2 className="text-2xl mb-4">
+                <h2 className="text-2xl mb-4 mt-4">
                     Previous tasks (not accepted by manager yet)
                 </h2>
             </div>
@@ -166,12 +167,29 @@ const TasksArea = () => {
                 </div>
                 <ExistingTasksFilteButtons/>
             </div>
+            <TaskSearchInput/>
             {tasks.map((task) => {
                 return <SingleTask key={task.id} task={task}/>;
             })}
         </div>
     );
 };
+
+function TaskSearchInput() {
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    return (
+        <>
+            <TextInput placeholder="Search by id" className="max-w-[200px]" ref={inputRef}
+                       onBlur={() => {
+                           showDebug({
+                               message: inputRef?.current?.value ?? ""
+                           })
+                       }}
+            />
+        </>
+    )
+}
 
 const ExistingTasksFilteButtons = () => {
     const sort = tasksPageStore((state) => state.selectedTasksSortType);
@@ -266,9 +284,6 @@ const TasksRangeDatePicker = () => {
                     tasksPageStore.setState((state) => {
                         state.activeDateRange = undefined;
                     });
-                    showDebug({
-                        message: `hi`
-                    });
                     return;
                 }
                 ;
@@ -321,8 +336,14 @@ const SingleTask = ({task}: { task: TaskOptional }) => {
                     <Overlay className=" bg-black/70 z-10 cursor-not-allowed "/>
                 </Tooltip>
             )}
-            <div className="flex gap-4 ">
-                <TaskStatusIcon task={workTask} />
+            <div className="flex gap-4">
+
+                <TaskStatusIcon task={workTask}/>
+
+                {
+                    workTask.id &&
+                    <TaskId task={workTask}/>
+                }
 
                 <ActivitySelector task={workTask} updateTask={updateTask}/>
 
@@ -338,18 +359,50 @@ const SingleTask = ({task}: { task: TaskOptional }) => {
     );
 };
 
+type TaskIdProps = {
+    task: TaskOptional
+}
+
+function TaskIdLabel({task}: TaskIdProps) {
+    return (
+        <div>
+            {task.id}
+        </div>
+    )
+}
+
+function TaskId({task}: TaskIdProps) {
+    const clipboard = useClipboard();
+
+    return (
+        <div className="flex justify-center items-center cursor-pointer min-h-full">
+            <Tooltip label={
+                clipboard.copied
+                    ? "Copied"
+                    : <TaskIdLabel task={task}/>
+            } onClick={() => {
+                clipboard.copy(task.id)
+            }}>
+                <div>
+                    ID
+                </div>
+            </Tooltip>
+        </div>
+    )
+}
+
 type TaskStatusIconProps = {
     task: TaskOptional
 }
 
-function TaskStatusIcon({task} : TaskStatusIconProps) {
+function TaskStatusIcon({task}: TaskStatusIconProps) {
 
     return (
         <div className="flex justify-center items-center min-h-full">
             {
                 task.accepted !== "" &&
                 task.rejected === "" &&
-                <Tooltip label={"Task accept"} >
+                <Tooltip label={"Task accept"}>
                     <IconCheck className=""/>
                 </Tooltip>
             }
@@ -418,6 +471,8 @@ async function onUpdateTask(task: TaskOptional) {
     }
 
     if (!validatedTask) return;
+
+    validatedTask.rejected = '';
 
     await pocketbase.collection("tasks").update(task.id, {
         ...validatedTask,

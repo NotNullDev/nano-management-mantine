@@ -1,21 +1,15 @@
-import { initLibraries } from "@/lib/common";
-import { queryClient } from "@/lib/tanstackQuery";
-import { logoutUser } from "@/logic/common/userStore";
-import { MantineProvider, Menu } from "@mantine/core";
-import { NotificationsProvider } from "@mantine/notifications";
-import {
-  IconHome,
-  IconSettings,
-  IconSpiral,
-  IconTimeline,
-  IconUsers,
-} from "@tabler/icons-react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { AppProps } from "next/app";
+import {initLibraries} from "@/lib/common";
+import {queryClient} from "@/lib/tanstackQuery";
+import {logoutUser} from "@/logic/common/userStore";
+import {MantineProvider, Menu} from "@mantine/core";
+import {NotificationsProvider} from "@mantine/notifications";
+import {IconHistory, IconHome, IconSettings, IconSpiral, IconTimeline, IconUsers} from "@tabler/icons-react";
+import {QueryClientProvider} from "@tanstack/react-query";
+import {AppProps} from "next/app";
 import Head from "next/head";
 import Link from "next/link";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import {useRouter} from "next/router";
+import {useEffect, useState} from "react";
 import "../styles/globals.css";
 
 {
@@ -23,7 +17,7 @@ import "../styles/globals.css";
 }
 
 export default function App(props: AppProps) {
-  const { Component, pageProps } = props;
+  const {Component, pageProps} = props;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -142,22 +136,27 @@ const Links = [
   {
     name: "/",
     path: "/tasks",
-    icon: <IconTimeline />,
+    icon: <IconTimeline/>,
   },
   {
     name: "/management",
     path: "/management",
-    icon: <IconSpiral />,
+    icon: <IconSpiral/>,
+  },
+  {
+    name: "/tasks-history",
+    path: "/tasks-history",
+    icon: <IconHistory/>,
   },
   {
     name: "/teams",
     path: "/teams",
-    icon: <IconUsers />,
+    icon: <IconUsers/>,
   },
   {
     name: "/organizations",
     path: "/organizations",
-    icon: <IconCorpo />,
+    icon: <IconCorpo/>,
   },
 ];
 
