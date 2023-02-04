@@ -4,7 +4,17 @@ import {pocketbase} from "@/lib/pocketbase";
 import {NanoUtils} from "@/logic/common/utils";
 import {useQuery} from "@tanstack/react-query";
 import {managementPageStore} from "@/logic/managementPage/managementPageStore";
-import {showDebug} from "@/lib/debug";
+
+
+type MANAGEMENT_QUERY_KEYS_ENUM = "tasks" | "teams" | "users";
+
+export class MANAGEMENT_QUERY_KEYS {
+    public static TASKS = "tasks" as MANAGEMENT_QUERY_KEYS_ENUM;
+    public static TEAMS = "teams" as MANAGEMENT_QUERY_KEYS_ENUM;
+    public static USERS = "users" as MANAGEMENT_QUERY_KEYS_ENUM;
+}
+
+// fetch functions
 
 async function fetchTeams(): Promise<Team[]> {
     const currentUserId = userStore.getState().user?.id ?? "";
@@ -17,15 +27,6 @@ async function fetchTeams(): Promise<Team[]> {
 
     return validatedTeams;
 }
-
-type MANAGEMENT_QUERY_KEYS_ENUM = "tasks" | "teams" | "users";
-
-export class MANAGEMENT_QUERY_KEYS {
-    public static TASKS = "tasks" as MANAGEMENT_QUERY_KEYS_ENUM;
-    public static TEAMS = "teams" as MANAGEMENT_QUERY_KEYS_ENUM;
-    public static USERS = "users" as MANAGEMENT_QUERY_KEYS_ENUM;
-}
-
 
 async function fetchTasks(
     teamId: string | undefined,
@@ -92,6 +93,8 @@ export async function rejectTasks(tasksIds: string[]): Promise<void> {
         });
     }
 }
+
+// hooks
 
 function useTeams() {
     useQuery([MANAGEMENT_QUERY_KEYS.TEAMS], fetchTeams, {

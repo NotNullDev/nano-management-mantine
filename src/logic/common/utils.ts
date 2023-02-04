@@ -19,4 +19,8 @@ export class NanoUtils {
   static joinOrFilters(filters: string[]): string {
     return filters.join(" || ");
   }
+
+  static makeUnique<T>(arr: T[]) {
+    return [...new Set(arr)];
+  }
 }

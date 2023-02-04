@@ -2,36 +2,29 @@
 
 import {pocketbase} from "@/lib/pocketbase";
 import {ActivitySchema, OrganizationSchema, ProjectSchema, TaskSchema, TeamSchema} from "@/types/types";
-import {NanoSortType} from "@/types/utilTypes";
 import {useQuery} from "@tanstack/react-query";
 import {tasksPageStore} from "@/logic/tasksPage/taskpageStore";
 import {TaskUtils} from "@/logic/tasksPage/tasksUtils";
+import {NanoSortType} from "@/types/utilTypes";
 import {NanoUtils} from "@/logic/common/utils";
 
-export async function fetchTaskManagementData() {
-    const tasks = await pocketbase.collection("tasks").getFullList();
 
-    const teams = await pocketbase.collection("teams").getFullList();
+type TASKS_QUERY_KEYS_ENUM =
+    | "tasks"
+    | "teams"
+    | "projects"
+    | "organizations"
+    | "activities";
 
-    const projects = await pocketbase.collection("projects").getFullList();
-
-    const organizations = await pocketbase
-        .collection("organizations")
-        .getFullList();
-
-    console.log(tasks);
-    console.log(teams);
-    console.log(projects);
-    console.log(organizations);
+export class TASKS_QUERY_KEYS {
+    public static TASKS = "tasks" as TASKS_QUERY_KEYS_ENUM;
+    public static TEAMS = "teams" as TASKS_QUERY_KEYS_ENUM;
+    public static PROJECTS = "projects" as TASKS_QUERY_KEYS_ENUM;
+    public static ORGANIZATIONS = "organizations" as TASKS_QUERY_KEYS_ENUM;
+    public static ACTIVITIES = "activities" as TASKS_QUERY_KEYS_ENUM;
 }
 
-export async function fetchTasks() {
-    const tasks = await pocketbase.collection("tasks").getFullList();
-
-    const validData = tasks.map((d) => TaskSchema.parse(d));
-
-    return validData;
-}
+// hooks
 
 export async function fetchTasksWhereTeamAndDateBetween(
     teamId: string,
@@ -40,7 +33,6 @@ export async function fetchTasksWhereTeamAndDateBetween(
     dateStart?: string,
     dateEnd?: string,
 ) {
-
     const sortSign = TaskUtils.getNanoSortTypeAsString(sort);
 
     const teamFilter = `team.id = '${teamId}'`;
@@ -97,30 +89,13 @@ export async function fetchOrganizations() {
     return validData;
 }
 
-const fetchActivities = async () => {
+export const fetchActivities = async () => {
     const activities = await pocketbase.collection("activities").getFullList();
 
     const validData = activities.map((d) => ActivitySchema.parse(d));
 
     return validData;
 };
-
-// hooks
-
-type TASKS_QUERY_KEYS_ENUM =
-    | "tasks"
-    | "teams"
-    | "projects"
-    | "organizations"
-    | "activities";
-
-export class TASKS_QUERY_KEYS {
-    public static TASKS = "tasks" as TASKS_QUERY_KEYS_ENUM;
-    public static TEAMS = "teams" as TASKS_QUERY_KEYS_ENUM;
-    public static PROJECTS = "projects" as TASKS_QUERY_KEYS_ENUM;
-    public static ORGANIZATIONS = "organizations" as TASKS_QUERY_KEYS_ENUM;
-    public static ACTIVITIES = "activities" as TASKS_QUERY_KEYS_ENUM;
-}
 
 export function useTasks() {
     const selectedTeam = tasksPageStore((state) => state.selectedTeam);
