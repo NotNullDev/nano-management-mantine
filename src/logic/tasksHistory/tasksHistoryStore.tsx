@@ -1,4 +1,4 @@
-import {Project, TasksHistory, Team} from "@/types/types";
+import {Project, Task, TasksHistory, Team} from "@/types/types";
 import {create} from "zustand";
 import {subscribeWithSelector} from "zustand/middleware";
 import {immer} from "zustand/middleware/immer";
@@ -11,6 +11,9 @@ export type TasksPageStoreType = {
 
     selectedProjectId?: string
     selectedTeamId?: string
+    selectedTaskId?: string
+
+    currentlySelectedTask?: Task
 };
 
 export const tasksHistoryPageStore = create<TasksPageStoreType>()(
@@ -18,7 +21,6 @@ export const tasksHistoryPageStore = create<TasksPageStoreType>()(
         immer((_set, _get, _store) => {
             return {
                 data: [],
-                selectedProjectId: undefined,
                 allTeams: [],
                 allProjects: []
             };

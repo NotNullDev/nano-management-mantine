@@ -1,4 +1,4 @@
-import { Activity, Project, Task, Team, User } from "./types";
+import {Activity, Project, Task, Team, User} from "./types";
 
 export type MantineSelectedActivityType = {
   value: Activity;
@@ -32,3 +32,7 @@ export type GroupedSummary = {
     tasksSum: number;
   }[];
 };
+
+export const TaskStatusOptions = ["accepted", "rejected", "none"] as const;
+export type TaskStatus = typeof TaskStatusOptions[number];
+

@@ -1,15 +1,21 @@
 import {Activity, Project, Task, TaskOptional, TaskSchema, Team} from "@/types/types";
-import {tasksPageStore} from "@/logic/tasksPage/taskpageStore";
 import dayjs from "dayjs";
 import {MantineSelectedActivityType, NanoSortType} from "@/types/utilTypes";
-import {userStore} from "@/logic/common/userStore";
 import {getProjectFromId, getTeamFromId} from "@/logic/tasksPage/pure";
 
 export class TaskUtils {
   static formatDate(date: Date): string {
     const formattedDate = dayjs(date)
-      .format("YYYY-MM-DD HH:mm:ss.SSS")
-      .toString();
+        .format("YYYY-MM-DD HH:mm:ss.SSS")
+        .toString();
+
+    return formattedDate;
+  }
+
+  static formatDateString(date: string): string {
+    const formattedDate = dayjs(date)
+        .format("YYYY-MM-DD HH:mm:ss.SSS")
+        .toString();
 
     return formattedDate;
   }

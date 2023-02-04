@@ -1,7 +1,7 @@
 import {pocketbase} from "@/lib/pocketbase";
 import {userStore} from "@/logic/common/userStore";
 import {useQuery} from "@tanstack/react-query";
-import {ProjectSchema, TasksHistory, TasksHistorySchema, TeamSchema} from "@/types/types";
+import {ProjectSchema, Task, TaskSchema, TasksHistory, TasksHistorySchema, TeamSchema} from "@/types/types";
 import {tasksHistoryPageStore} from "@/logic/tasksHistory/tasksHistoryStore";
 
 type TASKS_HISTORY_QUERY_KEYS_ENUM = "table" | "teams" | "projects";
@@ -10,6 +10,7 @@ export class TASKS_HISTORY_QUERY_KEYS {
     public static TABLE = "table" as TASKS_HISTORY_QUERY_KEYS_ENUM;
     public static TEAMS = "teams" as TASKS_HISTORY_QUERY_KEYS_ENUM;
     public static PROJECTS = "projects" as TASKS_HISTORY_QUERY_KEYS_ENUM;
+    public static CURRENT_SELECTED_TASK = "currentSelectedTask" as TASKS_HISTORY_QUERY_KEYS_ENUM;
 }
 
 
@@ -32,6 +33,19 @@ export async function fetchTeams() {
 
     const validData = teams.map((d) => TeamSchema.parse(d));
     return validData;
+}
+
+export async function fetchTaskWithId(taskId: string): Promise<Task | undefined> {
+
+    const res = await pocketbase.collection("tasks").getOne(taskId)
+
+    if (!res) {
+        return undefined;
+    }
+
+    const task = TaskSchema.parse(res);
+
+    return task;
 }
 
 export async function fetchProjects() {
@@ -66,7 +80,7 @@ export function useProjects() {
 }
 
 
-export function useTableData() {
+function useTableData() {
     const user = userStore(state => state.user);
 
     useQuery([TASKS_HISTORY_QUERY_KEYS.TABLE], async context => {
@@ -80,6 +94,25 @@ export function useTableData() {
             })
         }
     })
+}
+
+export function useSelectedTaskId() {
+    const selectedTaskId = tasksHistoryPageStore(state => state.selectedTaskId)
+
+    useQuery([TASKS_HISTORY_QUERY_KEYS.CURRENT_SELECTED_TASK, selectedTaskId], async () => {
+        if (!selectedTaskId) {
+            return undefined;
+        }
+        return await fetchTaskWithId(selectedTaskId);
+    }, {
+        enabled: !!selectedTaskId,
+        onSuccess: (data) => {
+            tasksHistoryPageStore.setState(state => {
+                state.currentlySelectedTask = data;
+            })
+        }
+    })
+
 }
 
 

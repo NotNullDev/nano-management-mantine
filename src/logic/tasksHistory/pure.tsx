@@ -1,5 +1,6 @@
-import {TasksHistory, Team} from "@/types/types";
+import {Task, TasksHistory, Team} from "@/types/types";
 import {NanoUtils} from "@/logic/common/utils";
+import {TaskStatus} from "@/types/utilTypes";
 
 export {}
 
@@ -23,4 +24,16 @@ export function getTeamsForSelectedProject(teams: Team[], selectedProjectId: str
     const uniqueTeams = NanoUtils.makeUnique(teamsForSelectedProject);
 
     return uniqueTeams;
+}
+
+export function getTaskStatus(task: Task): TaskStatus {
+    if (task.accepted !== "") {
+        return "accepted"
+    }
+
+    if (task.rejected !== "") {
+        return "rejected"
+    }
+
+    return "none"
 }

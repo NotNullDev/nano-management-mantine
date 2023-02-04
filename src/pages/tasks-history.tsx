@@ -1,12 +1,14 @@
-import {Drawer, ScrollArea, Select, Table} from "@mantine/core";
+import {Button, Drawer, Pagination, ScrollArea, Select, Table, TextInput} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {create} from "zustand";
 import {immer} from "zustand/middleware/immer";
-import {useTasksHistoryData} from "@/logic/tasksHistory/api";
+import {useSelectedTaskId, useTasksHistoryData} from "@/logic/tasksHistory/api";
 import {tasksHistoryPageStore} from "@/logic/tasksHistory/tasksHistoryStore";
-import {getTeamsForSelectedProject} from "@/logic/tasksHistory/pure";
+import {getTaskStatus, getTeamsForSelectedProject} from "@/logic/tasksHistory/pure";
 import {TasksHistory} from "@/types/types";
 import dayjs from "dayjs";
+import {TaskUtils} from "@/logic/tasksPage/tasksUtils";
+import {TaskStatusSelect} from "@/components/common/TaskStatusSelect";
 
 type TasksHistoryPageStoreInternalType = {
     drawerOpen: boolean
@@ -154,7 +156,11 @@ function ResultArea() {
     const data = tasksHistoryPageStore(state => state.data)
     return (
         <>
-            <Table highlightOnHover className="w-4/5 mx-auto">
+            <Table
+                highlightOnHover
+                withColumnBorders
+                striped
+                className="w-4/5 mx-auto">
                 <thead>
                 <th>Team</th>
                 <th>Person</th>
@@ -170,7 +176,14 @@ function ResultArea() {
                 }
                 </tbody>
             </Table>
+            <TablePagination/>
         </>
+    )
+}
+
+function TablePagination() {
+    return (
+        <Pagination total={100} className="mt-5" position="center"/>
     )
 }
 
@@ -201,6 +214,9 @@ function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
                     tasksHistoryPageStoreInternal.setState(state => {
                         state.drawerOpen = true;
                     })
+                    tasksHistoryPageStore.setState(state => {
+                        state.selectedTaskId = taskHistoryRecord.taskId
+                    })
                 }}
 
             >
@@ -221,6 +237,8 @@ function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
 
 function TaskDetailsDrawer() {
     const drawerOpen = tasksHistoryPageStoreInternal(state => state.drawerOpen)
+    const task = tasksHistoryPageStore(state => state.currentlySelectedTask)
+    useSelectedTaskId()
     return (
         <>
             <Drawer
@@ -236,7 +254,25 @@ function TaskDetailsDrawer() {
                 position="right"
             >
                 {/* Drawer content */}
-                <div>hello world</div>
+                {
+                    task && (
+                        <>
+                            <ScrollArea>
+                                <TextInput label={"Task ID"} value={task.id} disabled/>
+                                <TextInput label={"Comment"} value={task.comment} disabled/>
+                                <TextInput label={"Duration"} value={task.duration} disabled/>
+                                <TextInput label={"Date"} value={TaskUtils.formatDateString(task.date)} disabled/>
+                                <TextInput label={"User"} value={task?.user} disabled/>
+                                <TaskStatusSelect onChange={() => {
+                                }} initialStatus={getTaskStatus(task)}/>
+                                <TextInput label={"Team"} value={task?.team} disabled/>
+                                <div className="w-full justify-end items-end flex">
+                                    <Button className="bg-red-900 hover:bg-red-800 mt-2">Delete</Button>
+                                </div>
+                            </ScrollArea>
+                        </>
+                    )
+                }
             </Drawer>
         </>
     )
