@@ -1,21 +1,22 @@
-import {Button, Drawer, Pagination, ScrollArea, Select, Table, TextInput} from "@mantine/core";
+import {Button, Pagination, ScrollArea, Select, Table, TextInput} from "@mantine/core";
 import React, {useEffect, useState} from "react";
 import {create} from "zustand";
 import {immer} from "zustand/middleware/immer";
-import {useSelectedTaskId, useTasksHistoryData} from "@/logic/tasksHistory/api";
+import {useTasksHistoryData} from "@/logic/tasksHistory/api";
 import {
     setTaskHistoryStoreFilter,
     setTaskHistoryStoreSort,
     tasksHistoryPageStore
 } from "@/logic/tasksHistory/tasksHistoryStore";
-import {getTaskStatus, getTeamsForSelectedProject} from "@/logic/tasksHistory/pure";
-import {TasksHistory} from "@/types/types";
+import {getTeamsForSelectedProject} from "@/logic/tasksHistory/pure";
+import {TasksHistory, TaskStatusOptions, TaskStatusSchema} from "@/types/types";
 import dayjs from "dayjs";
 import {TaskUtils} from "@/logic/tasksPage/tasksUtils";
-import {TaskStatusSelect} from "@/components/common/TaskStatusSelect";
 import {DateRangePicker} from "@mantine/dates";
 import {IconArrowDown, IconArrowUp, IconCalendar} from "@tabler/icons-react";
 import {NanoSort, TasksHistoryFiltersOptional} from "@/types/utilTypes";
+import {TaskDetailsDrawer, taskDetailsDrawerStore} from "@/components/common/TaskDetailsDrawer";
+import {showDebug} from "@/lib/debug";
 
 type TasksHistoryPageStoreInternalType = {
     drawerOpen: boolean
@@ -42,7 +43,7 @@ const TasksHistoryPage = () => {
                     <ProjectSelector/>
                     <TeamSelector/>
                     <UserInputFilter/>
-                    <Select data={[]} label="Status"/>
+                    <TaskStatusFilter/>
                     <DateRangeSelector/>
                 </div>
 
@@ -51,6 +52,32 @@ const TasksHistoryPage = () => {
             </ScrollArea>
             <TaskDetailsDrawer/>
         </div>
+    )
+}
+
+function TaskStatusFilter() {
+    return (
+        <Select
+            label="Status"
+            defaultValue={"All"}
+            onChange={(e) => {
+                if (!e || e === "All") {
+                    setTaskHistoryStoreFilter("statusFilter", undefined)
+                    return
+                }
+
+                const nextStatus = TaskStatusSchema.parse(e)
+
+                showDebug({
+                    message: `${nextStatus}`
+                })
+
+                setTaskHistoryStoreFilter("statusFilter", nextStatus);
+            }}
+            data={["All", ...TaskStatusOptions]}
+            searchable
+        >
+        </Select>
     )
 }
 
@@ -146,14 +173,19 @@ function ProjectSelector() {
         <>
             <Select
                 value={currentValue ?? "All"}
-                data={projectNames}
+                data={["All", ...projectNames]}
                 searchable
                 clearable
                 onChange={(e) => {
                     const projectId = projects.find(p => p.name === e)?.id
 
-                    if (!projectId) {
-                        return
+                    if (!projectId || e === "All") {
+                        tasksHistoryPageStore.setState(state => {
+                            state.selectedProjectId = undefined
+                            state.selectedTeamId = undefined
+                            state.filter.teamFilter = undefined
+                            state.filter.projectFilter = undefined
+                        })
                     }
 
                     tasksHistoryPageStore.setState(state => {
@@ -202,13 +234,18 @@ function TeamSelector() {
                 clearable
                 placeholder="find by name"
                 searchable
-                data={teamsNames}
+                data={["All", ...teamsNames]}
                 value={selectedName ?? "All"}
                 onChange={(e) => {
                     const foundId = teams.find(t => t.name === e)?.id;
 
-                    if (!foundId) {
-                        return;
+                    if (!foundId || e === "All") {
+                        tasksHistoryPageStore.setState(state => {
+                            tasksHistoryPageStore.setState(state => {
+                                state.selectedTeamId = undefined
+                                state.filter.teamFilter = undefined
+                            })
+                        })
                     }
 
                     tasksHistoryPageStore.setState(state => {
@@ -314,17 +351,6 @@ type ResultAreaRowType = {
 
 function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
 
-    const getTaskStatus = (accepted: string, rejected: string) => {
-        if (accepted !== "") {
-            return "accepted";
-        }
-
-        if (rejected !== "") {
-            return "rejected"
-        }
-
-        return "fresh"
-    }
 
     return (
         <>
@@ -332,11 +358,9 @@ function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
                 className="cursor-pointer"
 
                 onClick={() => {
-                    tasksHistoryPageStoreInternal.setState(state => {
-                        state.drawerOpen = true;
-                    })
-                    tasksHistoryPageStore.setState(state => {
-                        state.selectedTaskId = taskHistoryRecord.taskId
+                    taskDetailsDrawerStore.setState(state => {
+                        state.open = true;
+                        state.taskId = taskHistoryRecord.taskId;
                     })
                 }}
 
@@ -348,7 +372,7 @@ function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
                 {/* task duration */}
                 <td>{taskHistoryRecord.taskDuration}</td>
                 {/* task status */}
-                <td>{getTaskStatus(taskHistoryRecord.taskAccepted, taskHistoryRecord.taskRejected)}</td>
+                <td>{taskHistoryRecord.taskStatus}</td>
                 {/* task date */}
                 <td>{dayjs(taskHistoryRecord.taskDate).format("DD.MM.YYYY")}</td>
             </tr>
@@ -356,45 +380,3 @@ function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
     )
 }
 
-function TaskDetailsDrawer() {
-    const drawerOpen = tasksHistoryPageStoreInternal(state => state.drawerOpen)
-    const task = tasksHistoryPageStore(state => state.currentlySelectedTask)
-    useSelectedTaskId()
-    return (
-        <>
-            <Drawer
-                opened={drawerOpen}
-                onClose={() => {
-                    tasksHistoryPageStoreInternal.setState(state => {
-                        state.drawerOpen = false;
-                    })
-                }}
-                title="Task details"
-                padding="xl"
-                size="xl"
-                position="right"
-            >
-                {/* Drawer content */}
-                {
-                    task && (
-                        <>
-                            <ScrollArea>
-                                <TextInput label={"Task ID"} value={task.id} disabled/>
-                                <TextInput label={"Comment"} value={task.comment} disabled/>
-                                <TextInput label={"Duration"} value={task.duration} disabled/>
-                                <TextInput label={"Date"} value={TaskUtils.formatDateString(task.date)} disabled/>
-                                <TextInput label={"User"} value={task?.user} disabled/>
-                                <TaskStatusSelect onChange={() => {
-                                }} initialStatus={getTaskStatus(task)}/>
-                                <TextInput label={"Team"} value={task?.team} disabled/>
-                                <div className="w-full justify-end items-end flex">
-                                    <Button className="bg-red-900 hover:bg-red-800 mt-2">Delete</Button>
-                                </div>
-                            </ScrollArea>
-                        </>
-                    )
-                }
-            </Drawer>
-        </>
-    )
-}

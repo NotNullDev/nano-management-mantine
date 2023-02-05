@@ -401,24 +401,21 @@ function TaskStatusIcon({task}: TaskStatusIconProps) {
     return (
         <div className="flex justify-center items-center min-h-full">
             {
-                task.accepted !== "" &&
-                task.rejected === "" &&
+                task.status === "accepted" &&
                 <Tooltip label={"Task accept"}>
                     <IconCheck className="text-sky-900"/>
                 </Tooltip>
             }
 
             {
-                task.rejected !== "" &&
-                task.accepted === "" &&
+                task.status === "rejected" &&
                 <Tooltip label={"Task rejected (to be corrected)"}>
                     <IconX/>
                 </Tooltip>
             }
 
             {
-                task.rejected === "" &&
-                task.accepted === "" &&
+                task.status === "none" &&
                 <Tooltip label={"New task (to be reviewed by manager)"}>
                     <IconQuestionMark/>
                 </Tooltip>
@@ -429,7 +426,6 @@ function TaskStatusIcon({task}: TaskStatusIconProps) {
 
 const NewTaskControlButton = ({
                                   task,
-                                  updateTask,
                               }: {
     task: TaskOptional;
     updateTask: (newTask: TaskOptional) => void;
@@ -479,7 +475,7 @@ async function onUpdateTask(task: TaskOptional) {
 
     if (!validatedTask) return;
 
-    validatedTask.rejected = '';
+    validatedTask.status = 'none';
 
     await pocketbase.collection("tasks").update(task.id, {
         ...validatedTask,
@@ -495,6 +491,8 @@ async function onUpdateTask(task: TaskOptional) {
 
 async function onAddTask(task: TaskOptional) {
     let validatedTask: SingleTask | undefined = undefined;
+
+    task.status = "none";
 
     try {
         validatedTask = TaskSchema.parse(task);

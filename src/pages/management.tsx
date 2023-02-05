@@ -1,26 +1,22 @@
-import { showDebug } from "@/lib/debug";
-import { queryClient } from "@/lib/tanstackQuery";
-import { groupTasksByUser } from "@/logic/common/pure";
-import {
-  acceptTasks,
-  MANAGEMENT_QUERY_KEYS,
-  rejectTasks,
-  useManagementData,
-} from "@/logic/managementPage/api";
-import { Task } from "@/types/types";
-import { TasksGroupedByUser } from "@/types/utilTypes";
-import { Button, ScrollArea, Select, Table } from "@mantine/core";
-import { showNotification } from "@mantine/notifications";
-import { IconCheck, IconFileExport, IconX } from "@tabler/icons-react";
+import {showDebug} from "@/lib/debug";
+import {queryClient} from "@/lib/tanstackQuery";
+import {groupTasksByUser} from "@/logic/common/pure";
+import {acceptTasks, MANAGEMENT_QUERY_KEYS, rejectTasks, useManagementData,} from "@/logic/managementPage/api";
+import {Task} from "@/types/types";
+import {TasksGroupedByUser} from "@/types/utilTypes";
+import {Button, ScrollArea, Select, Table} from "@mantine/core";
+import {showNotification} from "@mantine/notifications";
+import {IconCheck, IconFileExport, IconX} from "@tabler/icons-react";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import {managementPageStore} from "@/logic/managementPage/managementPageStore";
+import {TaskDetailsDrawer, taskDetailsDrawerStore} from "@/components/common/TaskDetailsDrawer";
 
 export const ManagementPage = () => {
-  useManagementData();
-  return (
-    <>
-      <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
+    useManagementData();
+    return (
+        <>
+            <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
         <h1 className="text-2xl font-bold mt-10 ml-5">Management</h1>
         <div className="flex w-full justify-end items-center gap-4">
           <TeamSelector />
@@ -159,15 +155,20 @@ function TaskGroup({ taskGroup }: { taskGroup: TasksGroupedByUser }) {
           <tbody>
             {taskGroup.tasks.map((task) => {
               return (
-                <tr key={task.id} className="">
-                  <td>
-                    {dayjs(task.date).format("DD.MM.YYYY")} (
-                    {dayjs(task.date).format("dddd")})
-                  </td>
-                  <td>
-                    <span>{task.duration} hours</span>
-                  </td>
-                </tr>
+                  <tr key={task.id} className="cursor-pointer" onClick={() => {
+                      taskDetailsDrawerStore.setState(state => {
+                          state.taskId = task.id
+                          state.open = true
+                      })
+                  }}>
+                      <td>
+                          {dayjs(task.date).format("DD.MM.YYYY")} (
+                          {dayjs(task.date).format("dddd")})
+                      </td>
+                      <td>
+                          <span>{task.duration} hours</span>
+                      </td>
+                  </tr>
               );
             })}
             <tr className="font-bold text-xl border-t border-sky-900">
@@ -229,21 +230,21 @@ function TaskGroup({ taskGroup }: { taskGroup: TasksGroupedByUser }) {
                     .filter(t => t.user === taskGroup.user.id)
                     .map(t => t.id ?? "")
 
-                await rejectTasks(tasksToAccept);
+                  await acceptTasks(tasksToAccept);
 
-                await acceptTasks(taskGroup.tasks.map((t) => t.id ?? ""));
                 await queryClient.invalidateQueries([
                   MANAGEMENT_QUERY_KEYS.TASKS,
                 ]);
-                showNotification({
-                  title: "Tasks updated",
-                  message: "Tasks have been accepted",
-                });
+                  showNotification({
+                      title: "Tasks updated",
+                      message: "Tasks have been accepted",
+                  });
               }}
             />
           </div>
         </div>
       </div>
+        <TaskDetailsDrawer/>
     </>
   );
 }

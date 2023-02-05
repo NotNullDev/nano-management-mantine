@@ -1,5 +1,5 @@
-import {TaskStatus, TaskStatusOptions} from "@/types/utilTypes";
 import {Select} from "@mantine/core";
+import {TaskStatus, TaskStatusOptions} from "@/types/types";
 
 type TaskStatusSelectType = {
     onChange: (taskStatus: TaskStatus) => void

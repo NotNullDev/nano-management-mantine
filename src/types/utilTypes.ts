@@ -1,4 +1,4 @@
-import {Activity, Project, Task, Team, User} from "./types";
+import {Activity, Project, Task, TaskStatusOptions, Team, User} from "./types";
 import {z} from "zod";
 
 export type MantineSelectedActivityType = {
@@ -46,8 +46,6 @@ export type GroupedSummary = {
 export const NanoSortOptions = ["asc", "desc", ""] as const;
 export type NanoSort = typeof NanoSortOptions[number];
 
-export const TaskStatusOptions = ["accepted", "rejected", "none"] as const;
-export type TaskStatus = typeof TaskStatusOptions[number];
 
 const TasksHistoryFiltersSchema = z.object({
     idFilter: z.string(),

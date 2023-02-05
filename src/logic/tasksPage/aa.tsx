@@ -13,8 +13,7 @@ export function getEmptyTaskOptional(): TaskOptional {
         duration: 8.0,
         team: tasksPageStore.getState().selectedTeam?.id || undefined,
         user: userStore.getState().user?.id || undefined,
-        accepted: "",
-        rejected: ""
+        status: "none"
     };
 }
 

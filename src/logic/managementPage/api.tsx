@@ -44,7 +44,7 @@ async function fetchTasks(
         filters.push(`team.managers.id = '${currentUserId}'`);
     }
 
-    filters.push("accepted = '' && rejected = ''");
+    filters.push("status = 'none'");
 
     const teams = await pocketbase.collection("tasks").getFullList(undefined, {
         filter: NanoUtils.joinAndFilters(filters),
@@ -79,7 +79,7 @@ export async function acceptTasks(tasksIds: string[]): Promise<void> {
 
     for (const tId of tasksIds) {
         await pocketbase.collection("tasks").update(tId, {
-            accepted: currentUserId,
+            status: "accepted",
         });
     }
 }
@@ -89,7 +89,7 @@ export async function rejectTasks(tasksIds: string[]): Promise<void> {
 
     for (const tId of tasksIds) {
         await pocketbase.collection("tasks").update(tId, {
-            rejected: currentUserId,
+            status: "rejected",
         });
     }
 }

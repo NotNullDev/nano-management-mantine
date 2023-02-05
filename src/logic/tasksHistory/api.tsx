@@ -5,6 +5,7 @@ import {ProjectSchema, Task, TaskSchema, TasksHistory, TasksHistorySchema, TeamS
 import {tasksHistoryPageStore} from "@/logic/tasksHistory/tasksHistoryStore";
 import {TasksHistoryFiltersOptional} from "@/types/utilTypes";
 import {tasksHistoryFilterToUrlSearchParams} from "@/logic/common/pure";
+import {taskDetailsDrawerStore} from "@/components/common/TaskDetailsDrawer";
 
 type TASKS_HISTORY_QUERY_KEYS_ENUM = "table" | "teams" | "projects";
 
@@ -40,7 +41,6 @@ export async function fetchTeams() {
 }
 
 export async function fetchTaskWithId(taskId: string): Promise<Task | undefined> {
-
     const res = await pocketbase.collection("tasks").getOne(taskId)
 
     if (!res) {
@@ -103,7 +103,7 @@ function useTableData() {
 }
 
 export function useSelectedTaskId() {
-    const selectedTaskId = tasksHistoryPageStore(state => state.selectedTaskId)
+    const selectedTaskId = taskDetailsDrawerStore(state => state.taskId)
 
     useQuery([TASKS_HISTORY_QUERY_KEYS.CURRENT_SELECTED_TASK, selectedTaskId], async () => {
         if (!selectedTaskId) {
@@ -113,8 +113,8 @@ export function useSelectedTaskId() {
     }, {
         enabled: !!selectedTaskId,
         onSuccess: (data) => {
-            tasksHistoryPageStore.setState(state => {
-                state.currentlySelectedTask = data;
+            taskDetailsDrawerStore.setState(state => {
+                state.task = data;
             })
         }
     })

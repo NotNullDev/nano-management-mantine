@@ -52,6 +52,10 @@ export const UserSchema = z.object({
     webSettings: z.string().nullable(),
 });
 
+export const TaskStatusOptions = ["accepted", "rejected", "none"] as const;
+export type TaskStatus = typeof TaskStatusOptions[number];
+export const TaskStatusSchema = z.enum(TaskStatusOptions);
+
 export const TaskSchema = z.object({
     id: string().optional(),
     activity: string(),
@@ -60,8 +64,7 @@ export const TaskSchema = z.object({
     date: string().min(1).max(255),
     user: string(),
     team: string(),
-    rejected: string(),
-    accepted: string()
+    status: TaskStatusSchema
 });
 
 export const DashboardSummarySchema = z.object({
@@ -74,8 +77,7 @@ export const TasksHistorySchema = z.object({
     taskId: z.string(),
     taskDate: z.string(),
     taskDuration: z.number(),
-    taskAccepted: z.string(),
-    taskRejected: z.string(),
+    taskStatus: z.string(),
     taskComment: z.string(),
 
     activityId: z.string(),
