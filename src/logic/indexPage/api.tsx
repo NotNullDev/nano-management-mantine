@@ -1,7 +1,7 @@
 import {pocketbase} from "@/lib/pocketbase";
 import {DashboardSummarySchema} from "@/types/types";
 import {useQuery} from "@tanstack/react-query";
-import { indexPageStore} from "@/logic/indexPage/indexPageStore";
+import {indexPageStore} from "@/logic/indexPage/indexPageStore";
 
 type INDEX_QUERY_KEYS_ENUM = "dashboardSummary";
 
@@ -10,7 +10,7 @@ export class INDEX_QUERY_KEYS {
 }
 
 const fetchDashboardSummary = async () => {
-    const resp = await pocketbase.send("/test", {
+    const resp = await pocketbase.send("/dashboard-summary", {
         method: "GET",
     });
 

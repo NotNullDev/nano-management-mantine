@@ -3,12 +3,19 @@ import React, {useEffect, useState} from "react";
 import {create} from "zustand";
 import {immer} from "zustand/middleware/immer";
 import {useSelectedTaskId, useTasksHistoryData} from "@/logic/tasksHistory/api";
-import {tasksHistoryPageStore} from "@/logic/tasksHistory/tasksHistoryStore";
+import {
+    setTaskHistoryStoreFilter,
+    setTaskHistoryStoreSort,
+    tasksHistoryPageStore
+} from "@/logic/tasksHistory/tasksHistoryStore";
 import {getTaskStatus, getTeamsForSelectedProject} from "@/logic/tasksHistory/pure";
 import {TasksHistory} from "@/types/types";
 import dayjs from "dayjs";
 import {TaskUtils} from "@/logic/tasksPage/tasksUtils";
 import {TaskStatusSelect} from "@/components/common/TaskStatusSelect";
+import {DateRangePicker} from "@mantine/dates";
+import {IconArrowDown, IconArrowUp, IconCalendar} from "@tabler/icons-react";
+import {NanoSort, TasksHistoryFiltersOptional} from "@/types/utilTypes";
 
 type TasksHistoryPageStoreInternalType = {
     drawerOpen: boolean
@@ -29,25 +36,14 @@ const TasksHistoryPage = () => {
 
     return (
         <div className="flex flex-1">
-            {/*<div className="w-[100px]">*/}
-
-            {/*    <h2 className="text-center text-xl font-bold">Export</h2>*/}
-
-            {/*    <Divider className="my-2"/>*/}
-
-            {/*    <div className="items-center flex flex-col justify-center gap-2">*/}
-            {/*        <Button>Excel</Button>*/}
-            {/*        <Button>CSV</Button>*/}
-            {/*    </div>*/}
-
-            {/*</div>*/}
             <ScrollArea className="flex flex-col flex-1 p-4 h-screen flex-1 items-center justify-center">
                 <h1 className="text-2xl font-bold my-10 ml-5">Tasks history</h1>
                 <div className="flex gap-4 mb-8">
                     <ProjectSelector/>
                     <TeamSelector/>
-                    <Select data={[]} label="Person"/>
+                    <UserInputFilter/>
                     <Select data={[]} label="Status"/>
+                    <DateRangeSelector/>
                 </div>
 
                 <ResultArea/>
@@ -58,7 +54,77 @@ const TasksHistoryPage = () => {
     )
 }
 
+function UserInputFilter() {
+    const val = tasksHistoryPageStore(
+        (state) => state.filter.userFilter
+    );
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (val && inputRef.current) {
+            inputRef.current.value = val;
+        }
+    }, [val])
+
+    return (
+        <TextInput
+            label="User"
+            ref={inputRef}
+            onBlur={() => {
+                setTaskHistoryStoreFilter("userFilter", inputRef.current?.value ?? "")
+            }}
+            placeholder="Email or name"
+            className="w-[200px]"
+        />
+    )
+}
+
 export default TasksHistoryPage;
+
+function DateRangeSelector() {
+    const [value, setValue] = React.useState<[Date, Date] | undefined>(
+        TaskUtils.getCurrentMonthDateRange()
+    );
+
+    const activeDateRange = tasksHistoryPageStore(
+        (state) => state.activeDateRange
+    );
+
+    useEffect(() => {
+        setValue(activeDateRange);
+        // queryClient.invalidateQueries([TASKS_QUERY_KEYS.TASKS]);
+    }, [activeDateRange]);
+
+    return (
+        <DateRangePicker
+            icon={<IconCalendar size={16}/>}
+            amountOfMonths={3}
+            placeholder="Pick date range"
+            label="Date range"
+            className="w-[350px]"
+            value={value}
+            clearable={true}
+            clearButtonLabel="clear"
+            onChange={(val) => {
+                if (!val || val.length !== 2 || !val[0] || !val[1]) {
+                    tasksHistoryPageStore.setState((state) => {
+                        state.filter.dateFromFilter = undefined;
+                        state.filter.dateToFilter = undefined;
+                    });
+                    return;
+                }
+                ;
+
+                const [from, to] = val;
+
+                tasksHistoryPageStore.setState((state) => {
+                    state.filter.dateFromFilter = TaskUtils.formatDate(from);
+                    state.filter.dateToFilter = TaskUtils.formatDate(to);
+                });
+            }}
+        />
+    );
+}
 
 function ProjectSelector() {
     const projects = tasksHistoryPageStore(state => state.allProjects);
@@ -94,6 +160,9 @@ function ProjectSelector() {
                         state.selectedProjectId = projectId
                         state.selectedTeamId = undefined
                     })
+
+                    setTaskHistoryStoreFilter("projectFilter", projectId)
+                    setTaskHistoryStoreFilter("teamFilter", undefined)
                 }} label="Project"/>
         </>
     )
@@ -145,7 +214,7 @@ function TeamSelector() {
                     tasksHistoryPageStore.setState(state => {
                         state.selectedTeamId = foundId
                     })
-
+                    setTaskHistoryStoreFilter("teamFilter", foundId)
                 }}
                 label="Team"/>
         </>
@@ -158,15 +227,15 @@ function ResultArea() {
         <>
             <Table
                 highlightOnHover
-                withColumnBorders
-                striped
-                className="w-4/5 mx-auto">
+                className="">
                 <thead>
-                <th>Team</th>
-                <th>Person</th>
-                <th>Task duration</th>
-                <th>Task status</th>
-                <th>Date</th>
+                <tr>
+                    <AreaResultHeader title={"Team"} fieldName="teamSort"/>
+                    <AreaResultHeader title={"User"} fieldName={"userSort"}/>
+                    <AreaResultHeader title={"Task duration"} fieldName="taskDurationSort"/>
+                    <AreaResultHeader title={"Task status"} fieldName="taskStatusSort"/>
+                    <AreaResultHeader title={"Date"} fieldName={"dateSort"}/>
+                </tr>
                 </thead>
                 <tbody>
                 {
@@ -178,6 +247,58 @@ function ResultArea() {
             </Table>
             <TablePagination/>
         </>
+    )
+}
+
+type AreaResultHeaderProps = {
+    title: string
+    onClick?: (sort: NanoSort) => void
+    fieldName: keyof TasksHistoryFiltersOptional
+}
+
+function AreaResultHeader({onClick, title, fieldName}: AreaResultHeaderProps) {
+    const value = tasksHistoryPageStore(state => state.filter[fieldName]) as NanoSort;
+    const [sort, setSort] = useState<NanoSort>("");
+
+    useEffect(() => {
+        setSort(value ?? "");
+    })
+
+    return (
+        <th>
+            <Button variant="subtle" color="gray"
+                    unstyled={false}
+                    onClick={() => {
+                        let nextSort: NanoSort = "";
+
+                        if (sort === "asc") {
+                            nextSort = "desc";
+                        }
+                        if (sort === "desc") {
+                            nextSort = "";
+                        }
+                        if (sort === "") {
+                            nextSort = "asc";
+                        }
+
+                        setTaskHistoryStoreSort(nextSort, fieldName)
+                    }}
+                    className={"flex justify-between items-center w-full"}>
+                <div className="flex flex-1">{title}</div>
+                <div>
+                    {
+                        /* to preserve spacing */
+                        sort === "" && <IconArrowDown className="invisible"/>
+                    }
+                    {
+                        sort === "desc" && <IconArrowDown/>
+                    }
+                    {
+                        sort === "asc" && <IconArrowUp/>
+                    }
+                </div>
+            </Button>
+        </th>
     )
 }
 

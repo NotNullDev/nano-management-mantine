@@ -288,7 +288,6 @@ const TasksRangeDatePicker = () => {
                     });
                     return;
                 }
-                ;
 
                 const [from, to] = val;
 

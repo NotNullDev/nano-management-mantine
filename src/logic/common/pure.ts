@@ -1,14 +1,14 @@
-import { DashboardSummary, Task, User } from "@/types/types";
-import { GroupedSummary, TasksGroupedByUser } from "@/types/utilTypes";
+import {DashboardSummary, Task, User} from "@/types/types";
+import {GroupedSummary, TasksGroupedByUser, TasksHistoryFiltersOptional} from "@/types/utilTypes";
 import dayjs from "dayjs";
 
 export {};
 
 export function groupTasksByUser(
-  tasks: Task[],
-  users: User[],
-  sort: "asc" | "desc" = "desc",
-  reduceSameDays: boolean = true
+    tasks: Task[],
+    users: User[],
+    sort: "asc" | "desc" = "desc",
+    reduceSameDays: boolean = true
 ): TasksGroupedByUser[] {
   let groupedTasks: TasksGroupedByUser[] = [];
 
@@ -151,6 +151,20 @@ export function groupDashboardSummaryByDate(
   });
 
   return groupedSummaries;
+}
+
+export function tasksHistoryFilterToUrlSearchParams(filter: TasksHistoryFiltersOptional) {
+  const params = new URLSearchParams()
+
+  let keys = Object.keys(filter) as (keyof TasksHistoryFiltersOptional)[]
+
+  keys.forEach(key => {
+    if (filter[key]) {
+      params.append(key, (filter[key] as String).toString())
+    }
+  })
+
+  return params;
 }
 
 // import { Activity, Organization, Project, Task } from "@/types/types";

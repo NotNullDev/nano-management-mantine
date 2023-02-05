@@ -5,8 +5,8 @@ import {ActivitySchema, OrganizationSchema, ProjectSchema, TaskSchema, TeamSchem
 import {useQuery} from "@tanstack/react-query";
 import {tasksPageStore} from "@/logic/tasksPage/taskpageStore";
 import {TaskUtils} from "@/logic/tasksPage/tasksUtils";
-import {NanoSortType} from "@/types/utilTypes";
 import {NanoUtils} from "@/logic/common/utils";
+import {NanoSort} from "@/types/utilTypes";
 
 
 type TASKS_QUERY_KEYS_ENUM =
@@ -28,7 +28,7 @@ export class TASKS_QUERY_KEYS {
 
 export async function fetchTasksWhereTeamAndDateBetween(
     teamId: string,
-    sort: NanoSortType,
+    sort: NanoSort,
     rejectedOnly: boolean,
     dateStart?: string,
     dateEnd?: string,

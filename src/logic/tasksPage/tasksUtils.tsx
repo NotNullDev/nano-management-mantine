@@ -1,6 +1,6 @@
 import {Activity, Project, Task, TaskOptional, TaskSchema, Team} from "@/types/types";
 import dayjs from "dayjs";
-import {MantineSelectedActivityType, NanoSortType} from "@/types/utilTypes";
+import {MantineSelectedActivityType, NanoSort} from "@/types/utilTypes";
 import {getProjectFromId, getTeamFromId} from "@/logic/tasksPage/pure";
 
 export class TaskUtils {
@@ -20,7 +20,7 @@ export class TaskUtils {
     return formattedDate;
   }
 
-  static getNanoSortTypeAsString(type: NanoSortType): string {
+  static getNanoSortTypeAsString(type: NanoSort): string {
     if (type === "asc") {
       return "+";
     }

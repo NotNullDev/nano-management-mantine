@@ -1,10 +1,10 @@
 import {Activity, Organization, Project, Task, TaskOptional, Team,} from "@/types/types";
-import {NanoSortType} from "@/types/utilTypes";
 import {create} from "zustand";
 import {subscribeWithSelector} from "zustand/middleware";
 import {immer} from "zustand/middleware/immer";
 import {TaskUtils} from "@/logic/tasksPage/tasksUtils";
 import {updateAvailableActivities, updateAvailableTeams} from "@/logic/tasksPage/aa";
+import {NanoSort} from "@/types/utilTypes";
 
 // store
 export type TasksPageStoreType = {
@@ -22,7 +22,7 @@ export type TasksPageStoreType = {
     selectedComment: string;
     selectedDate: Date;
     selectedDuration: number;
-    selectedTasksSortType: NanoSortType;
+    selectedTasksSortType: NanoSort;
     selectedRejectedOnly: boolean;
     activeDateRange: [Date, Date] | undefined;
     tasksLoading: boolean;

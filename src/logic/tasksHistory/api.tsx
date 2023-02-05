@@ -3,6 +3,8 @@ import {userStore} from "@/logic/common/userStore";
 import {useQuery} from "@tanstack/react-query";
 import {ProjectSchema, Task, TaskSchema, TasksHistory, TasksHistorySchema, TeamSchema} from "@/types/types";
 import {tasksHistoryPageStore} from "@/logic/tasksHistory/tasksHistoryStore";
+import {TasksHistoryFiltersOptional} from "@/types/utilTypes";
+import {tasksHistoryFilterToUrlSearchParams} from "@/logic/common/pure";
 
 type TASKS_HISTORY_QUERY_KEYS_ENUM = "table" | "teams" | "projects";
 
@@ -15,13 +17,15 @@ export class TASKS_HISTORY_QUERY_KEYS {
 
 
 type FetchTableDataProps = {
-    userId: string
+    userId: string,
+    filter: TasksHistoryFiltersOptional
 }
 
 async function fetchTableData(params: FetchTableDataProps) {
-    const result = await pocketbase.send("/tasks-history", {
+    const searchParams = tasksHistoryFilterToUrlSearchParams(params.filter);
+    const result = await pocketbase.send("/tasks-history?" + searchParams, {
         method: "GET",
-    },);
+    });
 
     const validatedData = result.map((r: []) => TasksHistorySchema.parse(r)) as TasksHistory[] // ??
 
@@ -82,10 +86,12 @@ export function useProjects() {
 
 function useTableData() {
     const user = userStore(state => state.user);
+    const filter = tasksHistoryPageStore(state => state.filter);
 
-    useQuery([TASKS_HISTORY_QUERY_KEYS.TABLE], async context => {
+    useQuery([TASKS_HISTORY_QUERY_KEYS.TABLE, user, filter], async context => {
         return await fetchTableData({
-            userId: user?.id ?? ""
+            userId: user?.id ?? "",
+            filter: filter
         })
     }, {
         onSuccess: (data) => {
