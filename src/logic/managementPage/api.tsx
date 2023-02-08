@@ -1,9 +1,19 @@
-import {Task, TaskSchema, Team, TeamSchema, User, UserSchema} from "@/types/types";
+import {
+    ManagementData,
+    ManagementDataSchema,
+    Task,
+    TaskSchema,
+    Team,
+    TeamSchema,
+    User,
+    UserSchema
+} from "@/types/types";
 import {userStore} from "@/logic/common/userStore";
 import {pocketbase} from "@/lib/pocketbase";
 import {NanoUtils} from "@/logic/common/utils";
 import {useQuery} from "@tanstack/react-query";
 import {managementPageStore} from "@/logic/managementPage/managementPageStore";
+import {showDebug} from "@/lib/debug";
 
 
 type MANAGEMENT_QUERY_KEYS_ENUM = "tasks" | "teams" | "users";
@@ -12,6 +22,7 @@ export class MANAGEMENT_QUERY_KEYS {
     public static TASKS = "tasks" as MANAGEMENT_QUERY_KEYS_ENUM;
     public static TEAMS = "teams" as MANAGEMENT_QUERY_KEYS_ENUM;
     public static USERS = "users" as MANAGEMENT_QUERY_KEYS_ENUM;
+    public static SUMMARY = "users" as MANAGEMENT_QUERY_KEYS_ENUM;
 }
 
 // fetch functions
@@ -37,7 +48,11 @@ async function fetchTasks(
     const filters: string[] = [];
 
     if (teamId && teamId !== "" && !showAll) {
-        filters.push(`team.id = '${teamId}'`);
+        filters.push(`team.id = '${teamId}'`)
+        showDebug({
+            message: `selected team: ${teamId}`
+        })
+
     }
 
     if (currentUserId) {
@@ -74,6 +89,14 @@ async function fetchUsers(
     return validatedData;
 }
 
+async function fetchManagementData() {
+    const resp = await pocketbase.send("/management-data", {})
+
+    const validatedData = resp.map((r: any) => ManagementDataSchema.parse(r)) as ManagementData[];
+
+    return validatedData;
+}
+
 export async function acceptTasks(tasksIds: string[]): Promise<void> {
     const currentUserId = userStore.getState().user?.id ?? "";
 
@@ -92,6 +115,30 @@ export async function rejectTasks(tasksIds: string[]): Promise<void> {
             status: "rejected",
         });
     }
+}
+
+export async function rejectTasksRange(userId: string, day: string): Promise<void> {
+    const params = new URLSearchParams();
+
+    params.append("userId", userId);
+    params.append("day", day);
+
+    await pocketbase.send("/reject-tasks?" + params, {
+        method: "POST",
+    })
+}
+
+export async function updateTasksStatuses(tasksToUpdate: {
+    days: string[],
+    userId: string,
+    status: string,
+}): Promise<void> {
+    const params = new URLSearchParams();
+
+    await pocketbase.send("/update-tasks-statuses?" + params, {
+        method: "POST",
+        body: JSON.stringify(tasksToUpdate),
+    })
 }
 
 // hooks
@@ -151,8 +198,19 @@ function useUsers() {
     );
 }
 
+function useSummary() {
+    useQuery([MANAGEMENT_QUERY_KEYS.SUMMARY], fetchManagementData, {
+        onSuccess: (data) => {
+            managementPageStore.setState((state) => {
+                state.managementData = data;
+            });
+        },
+    });
+}
+
 export function useManagementData() {
     useTeams();
     useTasks();
     useUsers();
+    useSummary();
 }

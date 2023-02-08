@@ -94,6 +94,21 @@ export const TasksHistorySchema = z.object({
     userEmail: z.string()
 })
 
+export const ManagementDataSchema = z.object({
+    userId: z.string(),
+    userName: z.string(),
+    userEmail: z.string(),
+
+    projectId: z.string(),
+    projectName: z.string(),
+
+    teamId: z.string(),
+    teamName: z.string(),
+
+    date: z.string(),
+    durationSummary: z.number(),
+});
+
 // inferred types
 
 export type Tag = z.infer<typeof TagSchema>;
@@ -116,6 +131,8 @@ export type DashboardSummary = z.infer<typeof DashboardSummarySchema>;
 
 export type TasksHistory = z.infer<typeof TasksHistorySchema>
 
+export type ManagementData = z.infer<typeof ManagementDataSchema>
+
 // optional types
 
 export type TagOptional = Partial<Tag>;
@@ -137,3 +154,5 @@ export type TaskOptional = Partial<Task>;
 export type DashboardSummaryOptional = Partial<DashboardSummary>;
 
 export type TasksHistoryOptional = Partial<TasksHistory>;
+
+export type ManagementDataOptional = Partial<ManagementData>;

@@ -1,4 +1,4 @@
-import {Activity, Project, Task, TaskStatusOptions, Team, User} from "./types";
+import {Activity, ManagementData, Project, Task, TaskStatusOptions, Team, User} from "./types";
 import {z} from "zod";
 
 export type MantineSelectedActivityType = {
@@ -23,6 +23,13 @@ export type TasksGroupedByUser = {
     user: User;
     tasks: Task[];
 };
+
+export type GroupedManagementData = {
+    userId: string;
+    userName: string;
+    userEmail: string;
+    managementData: ManagementData[]
+}
 
 export type GroupedSummary = {
     teamName: string;

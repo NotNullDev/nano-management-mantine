@@ -1,4 +1,4 @@
-import {Project, Task, Team, User,} from "@/types/types";
+import {ManagementData, Project, Task, Team, User,} from "@/types/types";
 import {create} from "zustand";
 import {immer} from "zustand/middleware/immer";
 
@@ -10,6 +10,7 @@ export type ManagementPageStore = {
     selectedProject: Project | null;
     selectedTeam: Team | null;
     showAllTeams: boolean;
+    managementData: ManagementData[]
 };
 
 export const managementPageStore = create<ManagementPageStore>()(
@@ -18,6 +19,7 @@ export const managementPageStore = create<ManagementPageStore>()(
             teams: [],
             tasks: [],
             users: [],
+            managementData: [],
             selectedProject: null,
             selectedTeam: null,
             showAllTeams: false,

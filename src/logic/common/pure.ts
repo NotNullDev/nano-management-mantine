@@ -1,5 +1,10 @@
-import {DashboardSummary, Task, User} from "@/types/types";
-import {GroupedSummary, TasksGroupedByUser, TasksHistoryFiltersOptional} from "@/types/utilTypes";
+import {DashboardSummary, ManagementData, Task, User} from "@/types/types";
+import {
+    GroupedManagementData,
+    GroupedSummary,
+    TasksGroupedByUser,
+    TasksHistoryFiltersOptional
+} from "@/types/utilTypes";
 import dayjs from "dayjs";
 
 export {};
@@ -10,76 +15,116 @@ export function groupTasksByUser(
     sort: "asc" | "desc" = "desc",
     reduceSameDays: boolean = true
 ): TasksGroupedByUser[] {
-  let groupedTasks: TasksGroupedByUser[] = [];
+    let groupedTasks: TasksGroupedByUser[] = [];
 
-  users.forEach((user) => {
-    const tasksByUser = tasks.filter((task) => task.user === user.id);
+    users.forEach((user) => {
+        const tasksByUser = tasks.filter((task) => task.user === user.id);
 
-    groupedTasks.push({
-      user,
-      tasks: tasksByUser,
-    });
-  });
-
-  groupedTasks.map((u) => {
-    u.tasks = sortTasks(u.tasks, sort);
-
-    // reduceSameDays
-    let reducedTasks: Task[] = [];
-    let lastDate: string | undefined = undefined;
-
-    u.tasks.forEach((task) => {
-      if (!lastDate || !dayjs(lastDate).isSame(task.date, "day")) {
-        reducedTasks.push({ ...task });
-      } else {
-        let lastTask = reducedTasks[reducedTasks.length - 1];
-        reducedTasks[reducedTasks.length - 1] = {
-          ...lastTask,
-          duration: lastTask.duration + task.duration,
-        };
-      }
-
-      lastDate = task.date;
+        groupedTasks.push({
+            user,
+            tasks: tasksByUser,
+        });
     });
 
-    console.log("reducedTasks", reducedTasks);
+    groupedTasks.map((u) => {
+        u.tasks = sortTasks(u.tasks, sort);
 
-    u.tasks = reducedTasks;
+        // reduceSameDays
+        let reducedTasks: Task[] = [];
+        let lastDate: string | undefined = undefined;
 
-    return u;
-  });
+        u.tasks.forEach((task) => {
+            if (!lastDate || !dayjs(lastDate).isSame(task.date, "day")) {
+                reducedTasks.push({...task});
+            } else {
+                let lastTask = reducedTasks[reducedTasks.length - 1];
+                reducedTasks[reducedTasks.length - 1] = {
+                    ...lastTask,
+                    duration: lastTask.duration + task.duration,
+                };
+            }
 
-  groupedTasks = groupedTasks.filter((u) => u.tasks.length > 0);
+            lastDate = task.date;
+        });
 
-  return groupedTasks;
+        console.log("reducedTasks", reducedTasks);
+
+        u.tasks = reducedTasks;
+
+        return u;
+    });
+
+    groupedTasks = groupedTasks.filter((u) => u.tasks.length > 0);
+
+    return groupedTasks;
 }
 
-export function sortTasks(tasks: Task[], sort: "asc" | "desc" = "desc") {
-  return tasks.sort((a, b) => {
-    const aDate = new Date(a.date);
-    const bDate = new Date(b.date);
+export function groupManagementDataByUser(
+    managementData: ManagementData[],
+    sort: "asc" | "desc" = "desc",
+): GroupedManagementData[] {
+    let res = managementData.reduce((acc, curr) => {
+        const existing = acc.find((item) => item.userId === curr.userId);
+        if (existing) {
+            existing.managementData.push(curr);
+        } else {
+            acc.push({
+                userId: curr.userId,
+                userName: curr.userName,
+                userEmail: curr.userEmail,
+                managementData: [curr],
+            });
+        }
+        return acc;
+    }, [] as GroupedManagementData[]);
+
 
     if (sort === "asc") {
-      return bDate.getTime() - aDate.getTime();
+        res.map(item => {
+            item.managementData = item.managementData.sort((a, b) => {
+                return dayjs(a.date).diff(dayjs(b.date));
+            })
+        })
     }
 
-    return aDate.getTime() - bDate.getTime();
-  });
+    if (sort === "desc") {
+        res.map(item => {
+            item.managementData = item.managementData.sort((a, b) => {
+                return dayjs(b.date).diff(dayjs(a.date));
+            })
+        })
+    }
+
+    return res;
+}
+
+
+export function sortTasks(tasks: Task[], sort: "asc" | "desc" = "desc") {
+    return tasks.sort((a, b) => {
+        const aDate = new Date(a.date);
+        const bDate = new Date(b.date);
+
+        if (sort === "asc") {
+            return bDate.getTime() - aDate.getTime();
+        }
+
+        return aDate.getTime() - bDate.getTime();
+    });
 }
 
 // sample data for two months:
 // [ { start: 01.01.2022, end: 31.01.2022 }, { start: 01.02.2022, end: 28.02.2022 } ]
 export function getNextXMonthsDateRanges(refData: Date, months: number) {
-  const dateRanges: { start: Date; end: Date }[] = [];
+    const dateRanges: { start: Date; end: Date }[] = [];
 
-  for (let i = 0; i < months; i++) {
-    const start = dayjs(refData).add(i, "month").startOf("month").toDate();
-    const end = dayjs(refData).add(i, "month").endOf("month").toDate();
+    for (let i = 0; i < months; i++) {
+        const start = dayjs(refData).add(i, "month").startOf("month").toDate();
+        const end = dayjs(refData).add(i, "month").endOf("month").toDate();
 
-    dateRanges.push({ start, end });
-  }
+        dateRanges.push({start, end});
+    }
 
-  return dateRanges;
+    return dateRanges;
 }
 
 export function groupTasksByUser2(
@@ -88,83 +133,87 @@ export function groupTasksByUser2(
     sort: "asc" | "desc" = "desc",
     reduceSameDays: boolean = true
 ) {
-  const result: TasksGroupedByUser[] = [];
+    const result: TasksGroupedByUser[] = [];
 
-  for (const user of users) {
-    const currentUserTasks = tasks.filter(t => t.user === user.id)
+    for (const user of users) {
+        const currentUserTasks = tasks.filter(t => t.user === user.id)
 
-    if (sort === "asc") {
-      tasks = tasks.sort((a, b) => {return dayjs(a.date).diff(b.date)})
-    } else {
-      tasks = tasks.sort((a, b) => {return dayjs(b.date).diff(a.date)})
-    }
-
-    if (reduceSameDays) {
-      const days = [] as string[]
-
-      for (const task of tasks) {
-        const day = task.date;
-
-        const dayInArr = days.find(d => d === day);
-
-        if (!dayInArr) {
-
+        if (sort === "asc") {
+            tasks = tasks.sort((a, b) => {
+                return dayjs(a.date).diff(b.date)
+            })
+        } else {
+            tasks = tasks.sort((a, b) => {
+                return dayjs(b.date).diff(a.date)
+            })
         }
 
-      }
-    }
+        if (reduceSameDays) {
+            const days = [] as string[]
 
-    const tasksGroup = {
-      user: user,
-      tasks: currentUserTasks
-    } as TasksGroupedByUser
-  }
+            for (const task of tasks) {
+                const day = task.date;
+
+                const dayInArr = days.find(d => d === day);
+
+                if (!dayInArr) {
+
+                }
+
+            }
+        }
+
+        const tasksGroup = {
+            user: user,
+            tasks: currentUserTasks
+        } as TasksGroupedByUser
+    }
 
 }
 
 export function groupDashboardSummaryByDate(
-  summaries: DashboardSummary[]
+    summaries: DashboardSummary[]
 ): GroupedSummary[] {
-  let groupedSummaries: GroupedSummary[] = [];
+    let groupedSummaries: GroupedSummary[] = [];
 
-  summaries.forEach((summary) => {
-    const foundGroup = groupedSummaries.find(
-      (group) => group.teamName === summary.teamName
-    );
+    summaries.forEach((summary) => {
+        const foundGroup = groupedSummaries.find(
+            (group) => group.teamName === summary.teamName
+        );
 
-    if (foundGroup) {
-      foundGroup.months.push({
-        date: summary.date,
-        tasksSum: summary.tasksSum,
-      });
-    } else {
-      groupedSummaries.push({
-        teamName: summary.teamName,
-        months: [
-          {
-            date: summary.date,
-            tasksSum: summary.tasksSum,
-          },
-        ],
-      });
-    }
-  });
+        if (foundGroup) {
+            foundGroup.months.push({
+                date: summary.date,
+                tasksSum: summary.tasksSum,
+            });
+        } else {
+            groupedSummaries.push({
+                teamName: summary.teamName,
+                months: [
+                    {
+                        date: summary.date,
+                        tasksSum: summary.tasksSum,
+                    },
+                ],
+            });
+        }
+    });
 
-  return groupedSummaries;
+    return groupedSummaries;
 }
 
 export function tasksHistoryFilterToUrlSearchParams(filter: TasksHistoryFiltersOptional) {
-  const params = new URLSearchParams()
+    const params = new URLSearchParams()
 
-  let keys = Object.keys(filter) as (keyof TasksHistoryFiltersOptional)[]
+    let keys = Object.keys(filter) as (keyof TasksHistoryFiltersOptional)[]
 
-  keys.forEach(key => {
-    if (filter[key]) {
-      params.append(key, (filter[key] as String).toString())
-    }
-  })
+    keys.forEach(key => {
+        if (filter[key]) {
+            params.append(key, (filter[key] as String).toString())
+        }
+    })
 
-  return params;
+    return params;
 }
 
 // import { Activity, Organization, Project, Task } from "@/types/types";
