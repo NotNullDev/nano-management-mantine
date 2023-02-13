@@ -29,7 +29,7 @@ export const tasksHistoryPageStore = create<TasksPageStoreType>()(
                 allProjects: [],
                 filter: {
                     page: 1,
-                    limit: 100,
+                    limit: 10,
                     dateSort: "desc",
                     taskDurationSort: "asc",
                 },

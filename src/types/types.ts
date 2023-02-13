@@ -54,6 +54,9 @@ export const UserSchema = z.object({
 
 export const TaskStatusOptions = ["accepted", "rejected", "none"] as const;
 export type TaskStatus = typeof TaskStatusOptions[number];
+export const TaskStatusWithoutAcceptedOptions = ["all", "rejected", "none"] as const;
+export type TaskStatusWithoutAccepted = typeof TaskStatusWithoutAcceptedOptions[number];
+
 export const TaskStatusSchema = z.enum(TaskStatusOptions);
 
 export const TaskSchema = z.object({
@@ -91,7 +94,9 @@ export const TasksHistorySchema = z.object({
 
     userId: z.string(),
     userName: z.string(),
-    userEmail: z.string()
+    userEmail: z.string(),
+
+    allCount: z.number(),
 })
 
 export const ManagementDataSchema = z.object({

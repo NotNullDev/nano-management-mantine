@@ -1,4 +1,12 @@
-import {Activity, Organization, Project, Task, TaskOptional, Team,} from "@/types/types";
+import {
+    Activity,
+    Organization,
+    Project,
+    Task,
+    TaskOptional, TaskStatusWithoutAccepted,
+    TaskStatusWithoutAcceptedOptions,
+    Team,
+} from "@/types/types";
 import {create} from "zustand";
 import {subscribeWithSelector} from "zustand/middleware";
 import {immer} from "zustand/middleware/immer";
@@ -8,12 +16,14 @@ import {NanoSort} from "@/types/utilTypes";
 
 // store
 export type TasksPageStoreType = {
+
     // server data
     tasks: Task[];
     teams: Team[];
     activities: Activity[];
     projects: Project[];
     organizations: Organization[];
+
     // internal state
     newTaskEntity: TaskOptional;
     selectedProject: Project | null;
@@ -23,13 +33,15 @@ export type TasksPageStoreType = {
     selectedDate: Date;
     selectedDuration: number;
     selectedTasksSortType: NanoSort;
-    selectedRejectedOnly: boolean;
+    selectedStatus: TaskStatusWithoutAccepted;
     activeDateRange: [Date, Date] | undefined;
     tasksLoading: boolean;
+
     // side effects
     availableTeams: Team[]; // based on selected project
     availableActivities: Activity[]; // based on selected team
     availableTasks: Task[]; // based on selected team
+
 };
 
 export const tasksPageStore = create<TasksPageStoreType>()(
@@ -42,6 +54,7 @@ export const tasksPageStore = create<TasksPageStoreType>()(
                 activities: [] as Activity[],
                 projects: [] as Project[],
                 organizations: [] as Organization[],
+
                 // internal state
                 newTaskEntity: {} as TaskOptional,
                 selectedProject: null,
@@ -52,7 +65,7 @@ export const tasksPageStore = create<TasksPageStoreType>()(
                 activeDateRange: TaskUtils.getCurrentMonthDateRange(),
                 selectedTasksSortType: "desc",
                 selectedActivity: null,
-                selectedRejectedOnly: false,
+                selectedStatus: "all",
                 tasksLoading: false,
 
                 // side effects

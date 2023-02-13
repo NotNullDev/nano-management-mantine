@@ -2,7 +2,13 @@ import {showDebug} from "@/lib/debug";
 import {pocketbase} from "@/lib/pocketbase";
 import {queryClient} from "@/lib/tanstackQuery";
 import {TaskUtils,} from "@/logic/tasksPage/tasksUtils";
-import {Task as SingleTask, TaskOptional, TaskSchema} from "@/types/types";
+import {
+    Task as SingleTask,
+    TaskOptional,
+    TaskSchema,
+    TaskStatusWithoutAccepted,
+    TaskStatusWithoutAcceptedOptions
+} from "@/types/types";
 import {
     Box,
     Button,
@@ -197,19 +203,15 @@ const ExistingTasksFilteButtons = () => {
     const sort = tasksPageStore((state) => state.selectedTasksSortType);
 
     return (
-        <div className="flex gap-6 items-center">
-            <Checkbox
-                size="md"
-                label="Rejected only"
-                color="violet"
-                onChange={(e) => {
-                    const rejectedOnly = e.currentTarget.checked ?? false;
+        <div className="flex gap-6 items-end">
 
-                    tasksPageStore.setState((state) => {
-                        state.selectedRejectedOnly = rejectedOnly;
-                    });
-                }}
-            />
+            <Select label="Task status" data={[...TaskStatusWithoutAcceptedOptions]} defaultValue="all" onChange={(value) => {
+                tasksPageStore.setState((state) => {
+                    state.selectedStatus = value as TaskStatusWithoutAccepted;
+                });
+                }
+            }/>
+
             <div className="flex gap-3">
                 {sort === "desc" && (
                     <Button

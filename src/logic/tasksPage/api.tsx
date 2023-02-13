@@ -29,7 +29,7 @@ export class TASKS_QUERY_KEYS {
 export async function fetchTasksWhereTeamAndDateBetween(
     teamId: string,
     sort: NanoSort,
-    rejectedOnly: boolean,
+    selectedStatus: "none" | "rejected" | "all",
     dateStart?: string,
     dateEnd?: string,
 ) {
@@ -47,8 +47,14 @@ export async function fetchTasksWhereTeamAndDateBetween(
         )
     }
 
-    if (rejectedOnly) {
-        filters.push(`rejected != ''`)
+    filters.push(`status != 'accepted'`)
+
+    if (selectedStatus === "rejected") {
+        filters.push(`status = 'rejected'`)
+    }
+
+    if (selectedStatus === "none") {
+        filters.push(`status = 'none'`)
     }
 
     const f = NanoUtils.joinAndFilters(
@@ -100,7 +106,7 @@ export const fetchActivities = async () => {
 export function useTasks() {
     const selectedTeam = tasksPageStore((state) => state.selectedTeam);
     const activeRange = tasksPageStore((state) => state.activeDateRange)
-    const selectedRejectedOnly = tasksPageStore(state => state.selectedRejectedOnly)
+    const selectedStatus = tasksPageStore(state => state.selectedStatus)
     const selectedTasksSortType = tasksPageStore(state => state.selectedTasksSortType)
 
     const query = useQuery(
@@ -108,7 +114,7 @@ export function useTasks() {
             TASKS_QUERY_KEYS.TASKS,
             selectedTeam?.id,
             selectedTasksSortType,
-            selectedRejectedOnly,
+            selectedStatus,
             activeRange
         ],
         async () => {
@@ -129,7 +135,7 @@ export function useTasks() {
             return fetchTasksWhereTeamAndDateBetween(
                 selectedTeam?.id ?? "---",
                 selectedTasksSortType,
-                selectedRejectedOnly,
+                selectedStatus,
                 formattedDateStart,
                 formattedDateEnd,
             );

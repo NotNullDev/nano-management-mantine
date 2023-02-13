@@ -340,8 +340,31 @@ function AreaResultHeader({onClick, title, fieldName}: AreaResultHeaderProps) {
 }
 
 function TablePagination() {
+    const tasks = tasksHistoryPageStore(state => state.data)
+    const selectedPageSize = tasksHistoryPageStore(state => state.filter.limit);
+
+    const allCount = tasks[0]?.allCount;
+
+    const totalPages = Math.ceil(allCount / (selectedPageSize || 10))
+
     return (
-        <Pagination total={100} className="mt-5" position="center"/>
+        <>
+            <div className="flex items-end justify-center gap-2" >
+                <Pagination total={totalPages ?? 0} className="mt-5" position="center"
+                            onChange={(page) => {
+                                tasksHistoryPageStore.setState(state => {
+                                    state.filter.page = page
+                                });
+                            }}
+                />
+                <Select data={["10", "20", "50", "100"]} value={(selectedPageSize ?? 10).toString()}
+                        onChange={(e) => {
+                            tasksHistoryPageStore.setState(state => {
+                                state.filter.limit = Number(e ?? 10)
+                            })}
+                        }/>
+            </div>
+        </>
     )
 }
 
