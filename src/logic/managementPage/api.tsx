@@ -50,9 +50,8 @@ async function fetchTasks(
     if (teamId && teamId !== "" && !showAll) {
         filters.push(`team.id = '${teamId}'`)
         showDebug({
-            message: `selected team: ${teamId}`
+            message: `selected aa team: ${teamId}`
         })
-
     }
 
     if (currentUserId) {
