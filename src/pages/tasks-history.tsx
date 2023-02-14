@@ -140,7 +140,6 @@ function DateRangeSelector() {
                     });
                     return;
                 }
-                ;
 
                 const [from, to] = val;
 
@@ -358,6 +357,7 @@ function TablePagination() {
                             }}
                 />
                 <Select data={["10", "20", "50", "100"]} value={(selectedPageSize ?? 10).toString()}
+                        className="w-[100px]"
                         onChange={(e) => {
                             tasksHistoryPageStore.setState(state => {
                                 state.filter.limit = Number(e ?? 10)

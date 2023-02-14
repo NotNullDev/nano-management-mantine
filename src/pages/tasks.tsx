@@ -188,7 +188,7 @@ function TaskSearchInput() {
 
     return (
         <>
-            <TextInput placeholder="Search by id" className="max-w-[200px]" ref={inputRef}
+            <TextInput placeholder="Search by id" className="max-w-[200px] invisible" ref={inputRef}
                        onBlur={() => {
                            showDebug({
                                message: inputRef?.current?.value ?? ""
@@ -412,14 +412,14 @@ function TaskStatusIcon({task}: TaskStatusIconProps) {
             {
                 task.status === "rejected" &&
                 <Tooltip label={"Task rejected (to be corrected)"}>
-                    <IconX/>
+                    <IconX className="text-red-800"/>
                 </Tooltip>
             }
 
             {
                 task.status === "none" &&
                 <Tooltip label={"New task (to be reviewed by manager)"}>
-                    <IconQuestionMark/>
+                    <IconQuestionMark className="text-sky-600"/>
                 </Tooltip>
             }
         </div>

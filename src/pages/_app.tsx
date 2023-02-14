@@ -38,7 +38,9 @@ export default function App(props: AppProps) {
             colorScheme: "dark",
           }}
         >
-          <NotificationsProvider>
+          <NotificationsProvider
+            position="top-right"
+          >
             <div className="flex-1 flex">
               <Sidebar />
               <Component {...pageProps} />
