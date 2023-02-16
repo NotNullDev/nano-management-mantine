@@ -3,7 +3,7 @@ import {queryClient} from "@/lib/tanstackQuery";
 import {logoutUser} from "@/logic/common/userStore";
 import {MantineProvider, Menu} from "@mantine/core";
 import {NotificationsProvider} from "@mantine/notifications";
-import {IconHistory, IconHome, IconSettings, IconSpiral, IconTimeline, IconUsers} from "@tabler/icons-react";
+import {IconHistory, IconHome, IconSettings, IconSpiral, IconTimeline, IconUser, IconUsers} from "@tabler/icons-react";
 import {QueryClientProvider} from "@tanstack/react-query";
 import {AppProps} from "next/app";
 import Head from "next/head";
@@ -149,6 +149,11 @@ const Links = [
     name: "/tasks-history",
     path: "/tasks-history",
     icon: <IconHistory/>,
+  },
+  {
+    name: "/users",
+    path: "/users",
+    icon: <IconUser/>,
   },
   {
     name: "/teams",

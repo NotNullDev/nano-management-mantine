@@ -17,6 +17,7 @@ import {IconArrowDown, IconArrowUp, IconCalendar} from "@tabler/icons-react";
 import {NanoSort, TasksHistoryFiltersOptional} from "@/types/utilTypes";
 import {TaskDetailsDrawer, taskDetailsDrawerStore} from "@/components/common/TaskDetailsDrawer";
 import {showDebug} from "@/lib/debug";
+import Head from "next/head";
 
 type TasksHistoryPageStoreInternalType = {
     drawerOpen: boolean
@@ -36,22 +37,27 @@ const TasksHistoryPage = () => {
     useTasksHistoryData()
 
     return (
-        <div className="flex flex-1">
-            <ScrollArea className="flex flex-col flex-1 p-4 h-screen flex-1 items-center justify-center">
-                <h1 className="text-2xl font-bold my-10 ml-5">Tasks history</h1>
-                <div className="flex gap-4 mb-8">
-                    <ProjectSelector/>
-                    <TeamSelector/>
-                    <UserInputFilter/>
-                    <TaskStatusFilter/>
-                    <DateRangeSelector/>
-                </div>
+        <>
+            <Head>
+                <title>Tasks history</title>
+            </Head>
+            <div className="flex flex-1">
+                <ScrollArea className="flex flex-col flex-1 p-4 h-screen flex-1 items-center justify-center">
+                    <h1 className="text-2xl font-bold my-10 ml-5">Tasks history</h1>
+                    <div className="flex gap-4 mb-8">
+                        <ProjectSelector/>
+                        <TeamSelector/>
+                        <UserInputFilter/>
+                        <TaskStatusFilter/>
+                        <DateRangeSelector/>
+                    </div>
 
-                <ResultArea/>
+                    <ResultArea/>
 
-            </ScrollArea>
-            <TaskDetailsDrawer/>
-        </div>
+                </ScrollArea>
+                <TaskDetailsDrawer/>
+            </div>
+        </>
     )
 }
 
@@ -302,8 +308,7 @@ function AreaResultHeader({onClick, title, fieldName}: AreaResultHeaderProps) {
 
     return (
         <th>
-            <Button variant="subtle" color="gray"
-                    unstyled={false}
+            <button
                     onClick={() => {
                         let nextSort: NanoSort = "";
 
@@ -319,21 +324,21 @@ function AreaResultHeader({onClick, title, fieldName}: AreaResultHeaderProps) {
 
                         setTaskHistoryStoreSort(nextSort, fieldName)
                     }}
-                    className={"flex justify-between items-center w-full"}>
-                <div className="flex flex-1">{title}</div>
-                <div>
-                    {
-                        /* to preserve spacing */
-                        sort === "" && <IconArrowDown className="invisible"/>
-                    }
-                    {
-                        sort === "desc" && <IconArrowDown/>
-                    }
-                    {
-                        sort === "asc" && <IconArrowUp/>
-                    }
-                </div>
-            </Button>
+                    className={"flex justify-between items-center w-full hover:bg-gray-800 p-2 px-3  rounded items-center"}>
+                    <div className="">{title}</div>
+                    <div className="">
+                        {
+                            /* to preserve spacing */
+                            sort === "" && <IconArrowDown className="invisible"/>
+                        }
+                        {
+                            sort === "desc" && <IconArrowDown/>
+                        }
+                        {
+                            sort === "asc" && <IconArrowUp/>
+                        }
+                    </div>
+            </button>
         </th>
     )
 }
@@ -402,4 +407,5 @@ function ResultAreaRow({taskHistoryRecord}: ResultAreaRowType) {
         </>
     )
 }
+
 

@@ -1,10 +1,15 @@
 import { showDebug } from "@/lib/debug";
 import { pocketbase } from "@/lib/pocketbase";
 import { Button } from "@mantine/core";
+import Head from "next/head";
+import React from "react";
 
 export const LoginPage = () => {
   return (
     <>
+        <Head>
+            <title>Login</title>
+        </Head>
       <Button
         className="bg-violet-900"
         onClick={async () => {

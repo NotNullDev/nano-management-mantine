@@ -7,14 +7,18 @@ import {Button, ScrollArea, Select, Table} from "@mantine/core";
 import {showNotification} from "@mantine/notifications";
 import {IconCheck, IconFileExport, IconX} from "@tabler/icons-react";
 import dayjs from "dayjs";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {managementPageStore} from "@/logic/managementPage/managementPageStore";
 import {TaskDetailsDrawer} from "@/components/common/TaskDetailsDrawer";
+import Head from "next/head";
 
 export const ManagementPage = () => {
     useManagementData();
     return (
         <>
+            <Head>
+                <title>Management</title>
+            </Head>
             <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
                 <h1 className="text-2xl font-bold mt-10 ml-5">Management</h1>
                 <div className="flex w-full justify-end items-center gap-4">

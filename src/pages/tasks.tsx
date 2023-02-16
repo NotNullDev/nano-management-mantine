@@ -47,6 +47,7 @@ import {
 } from "@/logic/tasksPage/pure";
 import {getEmptyTaskOptional} from "@/logic/tasksPage/aa";
 import {useClipboard} from "@mantine/hooks";
+import Head from "next/head";
 
 type TasksPageStoreType = {
     currentTask: TaskOptional;
@@ -56,11 +57,16 @@ type TasksPageStoreType = {
 const TasksPage = () => {
     useTaskManagementData();
     return (
-        <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
-            <h1 className="text-2xl font-bold mt-10 ml-5">Tasks management</h1>
-            <NanoToolbar/>
-            <TasksArea/>
-        </ScrollArea>
+        <>
+            <Head>
+                <title>Tasks</title>
+            </Head>
+            <ScrollArea className="flex flex-col flex-1 p-4 h-screen">
+                <h1 className="text-2xl font-bold mt-10 ml-5">Tasks management</h1>
+                <NanoToolbar/>
+                <TasksArea/>
+            </ScrollArea>
+        </>
     );
 };
 
