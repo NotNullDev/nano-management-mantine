@@ -1,0 +1,8 @@
+services:
+  app:
+    build:
+      .
+    volumes:
+      - .:/app:rw
+    ports:
+        - "3000:3000"
