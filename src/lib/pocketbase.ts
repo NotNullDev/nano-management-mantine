@@ -1,3 +1,11 @@
 import Pocketbase from "pocketbase";
 
-export const pocketbase = new Pocketbase("http://127.0.0.1:8090");
+const isProd = process.env.NODE_ENV === "production";
+
+let pocketbaseUrl = "";
+
+if (!isProd) {
+    pocketbaseUrl = "http://localhost:8090";
+}
+
+export const pocketbase = new Pocketbase(pocketbaseUrl);

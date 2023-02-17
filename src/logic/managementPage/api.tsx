@@ -89,7 +89,7 @@ async function fetchUsers(
 }
 
 async function fetchManagementData() {
-    const resp = await pocketbase.send("/management-data", {})
+    const resp = await pocketbase.send(NanoUtils.withUrlPrefix("/management-data"), {})
 
     const validatedData = resp.map((r: any) => ManagementDataSchema.parse(r)) as ManagementData[];
 
@@ -122,7 +122,7 @@ export async function rejectTasksRange(userId: string, day: string): Promise<voi
     params.append("userId", userId);
     params.append("day", day);
 
-    await pocketbase.send("/reject-tasks?" + params, {
+    await pocketbase.send(NanoUtils.withUrlPrefix("/reject-tasks") + "?" + params, {
         method: "POST",
     })
 }
@@ -134,7 +134,7 @@ export async function updateTasksStatuses(tasksToUpdate: {
 }): Promise<void> {
     const params = new URLSearchParams();
 
-    await pocketbase.send("/update-tasks-statuses?" + params, {
+    await pocketbase.send("/update-tasks-statuses" + "?" + params, {
         method: "POST",
         body: JSON.stringify(tasksToUpdate),
     })

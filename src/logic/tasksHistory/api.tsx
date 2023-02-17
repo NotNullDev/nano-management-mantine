@@ -6,6 +6,7 @@ import {tasksHistoryPageStore} from "@/logic/tasksHistory/tasksHistoryStore";
 import {TasksHistoryFiltersOptional} from "@/types/utilTypes";
 import {tasksHistoryFilterToUrlSearchParams} from "@/logic/common/pure";
 import {taskDetailsDrawerStore} from "@/components/common/TaskDetailsDrawer";
+import {NanoUtils} from "@/logic/common/utils";
 
 type TASKS_HISTORY_QUERY_KEYS_ENUM = "table" | "teams" | "projects";
 
@@ -24,7 +25,7 @@ type FetchTableDataProps = {
 
 async function fetchTableData(params: FetchTableDataProps) {
     const searchParams = tasksHistoryFilterToUrlSearchParams(params.filter);
-    const result = await pocketbase.send("/tasks-history?" + searchParams, {
+    const result = await pocketbase.send(NanoUtils.withUrlPrefix("/tasks-history") + "?" + searchParams, {
         method: "GET",
     });
 

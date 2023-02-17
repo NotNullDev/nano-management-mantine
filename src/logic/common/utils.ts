@@ -23,4 +23,27 @@ export class NanoUtils {
   static makeUnique<T>(arr: T[]) {
     return [...new Set(arr)];
   }
+
+  // always returns a string in format "<prefix>/<url>"
+  static withUrlPrefix(url: string): string {
+    let prefix = "api";
+
+    //
+    // if (
+    //     typeof window === "undefined" &&
+    //     process.env.NODE_ENV !== "production") { // yee
+    //     prefix = "api/"
+    // }
+
+    if (url.endsWith("/")) {
+        url = url.slice(0, -1)
+    }
+
+    if (url.startsWith("/")) {
+        url =  url.slice(1)
+    }
+
+    return prefix + "/" + url
+  }
 }
+
