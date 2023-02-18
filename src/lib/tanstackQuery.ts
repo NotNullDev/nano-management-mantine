@@ -14,7 +14,7 @@ export const queryClient = new QueryClient({
                     return;
                 }
 
-                if (error instanceof ZodError) {
+                if (userStore.getState().user && error instanceof ZodError) {
                     console.log(error);
 
                     const errorMessage = error.errors
