@@ -64,21 +64,6 @@ const UserStatsComponent = () => {
 
   return (
     <>
-      <div>You are not logged in</div>
-      <Button
-        onClick={() => {
-          authenticateAdmin();
-        }}
-      >
-        Login
-      </Button>
-      <Button
-        onClick={() => {
-          authenticateUser();
-        }}
-      >
-        As user
-      </Button>
     </>
   );
 };
