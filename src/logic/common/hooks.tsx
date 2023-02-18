@@ -3,21 +3,22 @@ import {useStore} from "zustand";
 import {useEffect} from "react";
 import {useRouter} from "next/router";
 
-export const AuthGuard = () => {
+export const useAuthGuard = () => {
     const {user, serverStatus} = useStore(userStore)
     const router = useRouter()
 
     useEffect(() => {
 
-        if (serverStatus === "offline") {
-            router.push("/offline");
+        if (serverStatus === "offline" && router.asPath !== "/offline") {
+            router.push("/offline")
             return;
         }
 
         if (!user) {
             router.push("/login")
         }
-    }, [user, serverStatus])
+
+    }, [user, serverStatus, router.asPath])
 
 
     if (serverStatus === "offline") {

@@ -9,7 +9,6 @@ export const queryClient = new QueryClient({
             refetchOnWindowFocus: false,
             retry: false,
             onError: (error) => {
-
                 const serverStatus = userStore.getState().serverStatus;
                 if (serverStatus === "offline") {
                     return;

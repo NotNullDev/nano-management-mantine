@@ -30,6 +30,14 @@ export const userStore = create<UserStore>()(
     )
 );
 
+userStore.subscribe((state) => {
+    if (state.serverStatus === "offline") {
+        showNotification({
+            message: "You are offline",
+        });
+    }
+});
+
 export async function authenticateAdmin() {
     const data = await pocketbase.admins.authWithPassword(
         "symmetric777@gmail.com",

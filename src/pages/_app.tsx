@@ -1,6 +1,6 @@
 import {initLibraries} from "@/lib/common";
 import {queryClient} from "@/lib/tanstackQuery";
-import {logoutUser} from "@/logic/common/userStore";
+import {logoutUser, userStore} from "@/logic/common/userStore";
 import {MantineProvider, Menu} from "@mantine/core";
 import {NotificationsProvider} from "@mantine/notifications";
 import {IconHistory, IconHome, IconSettings, IconSpiral, IconTimeline, IconUser, IconUsers} from "@tabler/icons-react";
@@ -11,6 +11,8 @@ import Link from "next/link";
 import {useRouter} from "next/router";
 import {useEffect, useState} from "react";
 import "../styles/globals.css";
+import {useAuthGuard} from "@/logic/common/hooks";
+import {useStore} from "zustand";
 
 {
   initLibraries();
@@ -18,6 +20,9 @@ import "../styles/globals.css";
 
 export default function App(props: AppProps) {
   const {Component, pageProps} = props;
+  const {user} = useStore(userStore)
+
+  useAuthGuard()
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -34,7 +39,6 @@ export default function App(props: AppProps) {
           // withCSSVariables
           // withNormalizeCSS
           theme={{
-            /** Put your mantine theme override here */
             colorScheme: "dark",
           }}
         >
@@ -42,7 +46,7 @@ export default function App(props: AppProps) {
             position="top-right"
           >
             <div className="flex-1 flex">
-              <Sidebar />
+              {user && <Sidebar />}
               <Component {...pageProps} />
             </div>
           </NotificationsProvider>

@@ -45,7 +45,7 @@ const UserStatsComponent = () => {
     return (
       <>
           <div className="text-3xl w-full text-center mb-10">
-              <span className="text-green-700">Welcome back</span>
+              <span className="">Welcome back</span>
               <span className="font-bold ml-3 text-indigo-600">{user.email}</span>
           </div>
           <div className="w-4/5">
